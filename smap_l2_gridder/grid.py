@@ -18,7 +18,6 @@ def decode_grid(in_data: DataTree, output_file: str):
     out_data = DataTree()
 
     # First stab. We know what to do with these files in PoC.
-
     # copy over all the input metadata directly to the output file.
     out_data = transfer_metadata(in_data, out_data)
 
@@ -31,6 +30,7 @@ def decode_grid(in_data: DataTree, output_file: str):
         grid_info = get_target_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
         for var_name in vars_to_grid:
+
             gridded_var_data = grid_variable(in_data[node_name][var_name], grid_info)
             # add variable to output data
             out_data[f'{node_name}/{var_name}'] = DataArray(
@@ -63,7 +63,11 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
         fill_val,
         dtype=var.encoding['dtype'],
     )
-    valid_mask = ~np.isnan(var.data)
+    try:
+        valid_mask = ~np.isnan(var.data)
+    except TypeError as e:
+        # tb_time_utc is type string
+        valid_mask = var.data != ""
     valid_rows = grid_info['rows'].data[valid_mask]
     valid_cols = grid_info['cols'].data[valid_mask]
     valid_values = var.data[valid_mask]
@@ -110,7 +114,7 @@ def get_target_variables(in_data: DataTree, node: str) -> list[str]:
     some special handling cases in the future. In this PoC it's just these.
 
     """
-    return ['albedo', 'latitude', 'longitude', 'EASE_column_index', 'EASE_row_index']
+    return [var for var in in_data[node]]
 
 
 def get_target_grid_information(in_data: DataTree, node: str) -> dict:
