@@ -15,7 +15,7 @@ def main():
     """Entrypoint for local running and testing."""
     try:
         args = parse_args()
-        with open_datatree(args.input) as in_data:
+        with open_datatree(args.input, decode_times=False) as in_data:
             process_input(in_data, args.output)
     except Exception as e:
         print(f"Error occurred: {e}")
