@@ -1,9 +1,27 @@
 """ Module containing information particular to geolocating the input data to a target grid.
 
-We may need to update some of these.
 """
-
+from dataclasses import dataclass
 import numpy as np
+
+from .exceptions import InvalidGPDError
+
+@dataclass
+class Geotransform:
+    """Class for holding a GDAL-style 6-element geotransform."""
+    top_left_x: np.float64
+    pixel_width: np.float64
+    row_rotation: np.float64
+    top_left_y: np.float64
+    column_rotation: np.float64
+    pixel_height: np.float64
+
+    def col_row_to_xy(self, col: int, row: int) -> tuple[np.float64, np.float64]:
+        """Convert grid cell location to x,y coordinate."""
+        x = self.top_left_x + col * self.pixel_width + row * self.row_rotation
+        y = self.top_left_y + col * self.column_rotation + row * self.pixel_height
+        return x, y
+
 
 # The authoritative value is found here: https://epsg.org/crs/wkt/id/6933
 # The pyproj CRS created from this string is the same as a CRS that has been
@@ -15,6 +33,8 @@ import numpy as np
 # but
 # pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt())
 #   == pyproj.crs.CRS.from_wkt(epsg_6933_wkt)
+
+# NSIDC EASE-Grid 2.0 Global CRS definition
 epsg_6933_wkt = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 Global",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
@@ -43,6 +63,7 @@ epsg_6933_wkt = (
     'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",6933]]'
 )
 
+# NSIDC EASE-Grid 2.0 North CRS definition
 epsg_6931_wkt = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 North",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
@@ -74,15 +95,35 @@ epsg_6931_wkt = (
 )
 
 
-EASE2_M09km = {
-    'map_origin_x': -17367530.4451615,  # meters, -180.0000 deg lon  mapped to x
-    'map_origin_y': 7314540.8306386,  # meters, grid map units per cell *  grid height / 2
-    'grid_map_origin_column': -0.5,
-    'grid_map_origin_row': -0.5,
-    'grid_map_units_per_cell': 9008.055210146,  # meters, -2 * map origin x /  grid width
-    'grid_width': 3856,
-    'grid_height': 1624,
-}
+def geotransform_from_gpd(gpd_filename: str) -> Geotransform:
+    """parse and return a geotransform from an NSIDC gpd file.
+
+    GT(0) x-coordinate of the upper-left corner of the upper-left pixel.
+    GT(1) w-e pixel resolution / pixel width.
+    GT(2) row rotation (typically zero).
+    GT(3) y-coordinate of the upper-left corner of the upper-left pixel.
+    GT(4) column rotation (typically zero).
+    GT(5) n-s pixel resolution / pixel height (negative value for a north-up image).
+
+    """
+    grid_info = parse_gpd_file(gpd_filename)
+
+    validate_gpd_style(grid_info)
+    return Geotransform(
+        grid_info['Map Origin X'],
+        grid_info['Grid Map Units per Cell'],
+        np.float64(0.0),
+        grid_info['Map Origin Y'],
+        np.float64(0.0),
+        -1.0 * grid_info['Grid Map Units per Cell'],
+    )
+
+
+def validate_gpd_style(grid_info: dict) -> None:
+    """Raise error if the gpd is non-standard."""
+    if ((grid_info['Grid Map Origin Column'] != -0.5) or
+        (grid_info['Grid Map Origin Row'] != -0.5)):
+        raise InvalidGPDError('Can not use non standard gpd.')
 
 
 def convert_value(value: str) -> str | np.float64 | np.long:
@@ -95,6 +136,7 @@ def convert_value(value: str) -> str | np.float64 | np.long:
             return np.long(value)
     except ValueError:
         return value
+
 
 def parse_gpd_file(filename: str) -> dict:
     """
@@ -113,16 +155,15 @@ def parse_gpd_file(filename: str) -> dict:
         Integer-like numbers are converted to np.long
         Non-numeric values remain as strings
     """
-    params = {}
+    gpd_info = {}
 
     with open(filename, encoding='utf-8') as f:
         for line in f:
-            # Skip empty lines and comments
+
             line = line.strip()
             if not line or line.startswith(';'):
                 continue
 
-            # Split on the first occurrence of ':'
             if ':' in line:
                 key, value = line.split(':', 1)
                 key = key.strip()
@@ -130,6 +171,6 @@ def parse_gpd_file(filename: str) -> dict:
                 value = value.split(';')[0].strip()
 
                 if key and value:
-                    params[key] = convert_value(value)
+                    gpd_info[key] = convert_value(value)
 
-    return params
+    return gpd_info
