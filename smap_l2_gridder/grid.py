@@ -6,7 +6,11 @@ routines to translate the 1D intput arrays into the EASE grid output format
 
 from xarray import DataTree, DataArray
 from numpy import ndarray, dtype
+from pathlib import Path
 import numpy as np
+
+
+from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
 
 
 def process_input(in_data: DataTree, output_file: str):
@@ -27,7 +31,7 @@ def decode_grid(in_data: DataTree, output_file: str):
     # it's column index full location, it's row index full location, the target
     # grid shape.
     for node_name in data_node_names:
-        grid_info = get_target_grid_information(in_data, node_name)
+        grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
         for var_name in vars_to_grid:
 
@@ -59,7 +63,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     fill_val = variable_fill_value(var)
     print(f'{var.name} fill: {fill_val}: {type(fill_val)}')
     grid = np.full(
-        (grid_info['n_rows'], grid_info['n_cols']),
+        (grid_info['target']['Grid Height'], grid_info['target']['Grid Width']),
         fill_val,
         dtype=var.encoding['dtype'],
     )
@@ -68,8 +72,8 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     except TypeError as e:
         # tb_time_utc is type string
         valid_mask = var.data != ""
-    valid_rows = grid_info['rows'].data[valid_mask]
-    valid_cols = grid_info['cols'].data[valid_mask]
+    valid_rows = grid_info['src']['rows'].data[valid_mask]
+    valid_cols = grid_info['src']['cols'].data[valid_mask]
     valid_values = var.data[valid_mask]
     grid[valid_rows, valid_cols] = valid_values
     # TODO [MHS, 11/07/2024]  Add dimension names x-dim, y-dim?
@@ -117,7 +121,7 @@ def get_target_variables(in_data: DataTree, node: str) -> list[str]:
     return [var for var in in_data[node]]
 
 
-def get_target_grid_information(in_data: DataTree, node: str) -> dict:
+def get_grid_information(in_data: DataTree, node: str) -> dict:
     """Get the column, row index locations and grid information for this node.
 
     For the PoC this will always be "node/EASE_column_index",
@@ -127,20 +131,36 @@ def get_target_grid_information(in_data: DataTree, node: str) -> dict:
     suss which grid each node is representing.
 
     """
-    grid_info = {}
+    src_grid_info = {}
     row = in_data[f'/{node}/EASE_row_index']
     column = in_data[f'/{node}/EASE_column_index']
-    grid_info['rows'] = row.astype(row.encoding.get('dtype', 'uint16'))
-    grid_info['cols'] = column.astype(column.encoding.get('dtype', 'uint16'))
+    src_grid_info['rows'] = row.astype(row.encoding.get('dtype', 'uint16'))
+    src_grid_info['cols'] = column.astype(column.encoding.get('dtype', 'uint16'))
 
-    if is_polar_node(node):
-        grid_info['n_cols'] = 2000
-        grid_info['n_rows'] = 2000
-    else:
-        grid_info['n_cols'] = 3856
-        grid_info['n_rows'] = 1624
+    grid_info = {}
+    grid_info['src'] = src_grid_info
+    grid_info['target'] = get_target_grid_information(node)
 
     return grid_info
+
+
+def get_target_grid_information(node: str) -> dict:
+    """Return the target grid informaton.
+
+    TODO [MHS, 11/13/2024] This might be in the wrong file.
+    """
+    if is_polar_node(node):
+        gpd_name = 'EASE2_N09km.gpd'
+        wkt = epsg_6931_wkt
+    else:
+        gpd_name = 'EASE2_M09km.gpd'
+        wkt = epsg_6933_wkt
+
+    target_grid_info = parse_gpd_file(gpd_name)
+    target_grid_info['wkt'] = wkt
+    return target_grid_info
+
+
 
 
 def is_polar_node(node: str) -> bool:

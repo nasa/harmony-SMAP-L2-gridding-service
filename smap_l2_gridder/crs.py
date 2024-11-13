@@ -3,6 +3,7 @@
 """
 from dataclasses import dataclass
 import numpy as np
+from pathlib import Path
 
 from .exceptions import InvalidGPDError
 
@@ -33,6 +34,7 @@ class Geotransform:
 # but
 # pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt())
 #   == pyproj.crs.CRS.from_wkt(epsg_6933_wkt)
+
 
 # NSIDC EASE-Grid 2.0 Global CRS definition
 epsg_6933_wkt = (
@@ -94,6 +96,11 @@ epsg_6931_wkt = (
     'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",6931]]'
 )
 
+GPD_TO_WKT = {
+    "EASE2_N09km.gpd": epsg_6931_wkt,
+    "EASE2_M09km.gpd": epsg_6933_wkt,
+}
+
 
 def geotransform_from_gpd(gpd_filename: str) -> Geotransform:
     """parse and return a geotransform from an NSIDC gpd file.
@@ -138,7 +145,7 @@ def convert_value(value: str) -> str | np.float64 | np.long:
         return value
 
 
-def parse_gpd_file(filename: str) -> dict:
+def parse_gpd_file(gpd_name: str) -> dict:
     """
     Parse a grid parameter definition file and return a dictionary of parameters.
 
@@ -156,6 +163,8 @@ def parse_gpd_file(filename: str) -> dict:
         Non-numeric values remain as strings
     """
     gpd_info = {}
+
+    filename = f'{Path(__file__).parent}/reference/{gpd_name}'
 
     with open(filename, encoding='utf-8') as f:
         for line in f:
