@@ -10,7 +10,8 @@ from pathlib import Path
 import numpy as np
 
 
-from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
+from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file, compute_dims
+
 
 
 def process_input(in_data: DataTree, output_file: str):
@@ -33,6 +34,9 @@ def decode_grid(in_data: DataTree, output_file: str):
     for node_name in data_node_names:
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
+        x_dim, y_dim = compute_dims(grid_info)
+        out_data[f'{node_name}/x-dim'] = x_dim
+        out_data[f'{node_name}/y-dim'] = y_dim
         for var_name in vars_to_grid:
 
             gridded_var_data = grid_variable(in_data[node_name][var_name], grid_info)
@@ -159,8 +163,6 @@ def get_target_grid_information(node: str) -> dict:
     target_grid_info = parse_gpd_file(gpd_name)
     target_grid_info['wkt'] = wkt
     return target_grid_info
-
-
 
 
 def is_polar_node(node: str) -> bool:

@@ -19,6 +19,7 @@ def main():
             process_input(in_data, args.output)
     except Exception as e:
         print(f"Error occurred: {e}")
+        raise e
         return 1
     print(f'successfully processed {args.input} into {args.output}')
     return 0

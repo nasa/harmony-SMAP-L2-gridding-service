@@ -3,6 +3,8 @@
 """
 from dataclasses import dataclass
 import numpy as np
+from xarray import DataArray
+import xarray as xr
 from pathlib import Path
 
 from .exceptions import InvalidGPDError
@@ -19,6 +21,11 @@ class Geotransform:
 
     def col_row_to_xy(self, col: int, row: int) -> tuple[np.float64, np.float64]:
         """Convert grid cell location to x,y coordinate."""
+        # Geotransform is from upper left corner as (0,0), so center of grid
+        # cell is (.5, .5)
+        col = col + .5
+        row = row + .5
+
         x = self.top_left_x + col * self.pixel_width + row * self.row_rotation
         y = self.top_left_y + col * self.column_rotation + row * self.pixel_height
         return x, y
@@ -102,8 +109,10 @@ GPD_TO_WKT = {
 }
 
 
-def geotransform_from_gpd(gpd_filename: str) -> Geotransform:
-    """parse and return a geotransform from an NSIDC gpd file.
+def geotransform_from_grid_info(grid_info: dict) -> Geotransform:
+    """Return a geotransform from the grid_info dict.
+
+    grid_info contains a parsed NSIDC gpd file.
 
     GT(0) x-coordinate of the upper-left corner of the upper-left pixel.
     GT(1) w-e pixel resolution / pixel width.
@@ -113,23 +122,22 @@ def geotransform_from_gpd(gpd_filename: str) -> Geotransform:
     GT(5) n-s pixel resolution / pixel height (negative value for a north-up image).
 
     """
-    grid_info = parse_gpd_file(gpd_filename)
-
-    validate_gpd_style(grid_info)
+    target_info = grid_info['target']
+    validate_gpd_style(target_info)
     return Geotransform(
-        grid_info['Map Origin X'],
-        grid_info['Grid Map Units per Cell'],
+        target_info['Map Origin X'],
+        target_info['Grid Map Units per Cell'],
         np.float64(0.0),
-        grid_info['Map Origin Y'],
+        target_info['Map Origin Y'],
         np.float64(0.0),
-        -1.0 * grid_info['Grid Map Units per Cell'],
+        -1.0 * target_info['Grid Map Units per Cell'],
     )
 
 
-def validate_gpd_style(grid_info: dict) -> None:
+def validate_gpd_style(target_info: dict) -> None:
     """Raise error if the gpd is non-standard."""
-    if ((grid_info['Grid Map Origin Column'] != -0.5) or
-        (grid_info['Grid Map Origin Row'] != -0.5)):
+    if ((target_info['Grid Map Origin Column'] != -0.5) or
+        (target_info['Grid Map Origin Row'] != -0.5)):
         raise InvalidGPDError('Can not use non standard gpd.')
 
 
@@ -146,13 +154,14 @@ def convert_value(value: str) -> str | np.float64 | np.long:
 
 
 def parse_gpd_file(gpd_name: str) -> dict:
-    """
-    Parse a grid parameter definition file and return a dictionary of parameters.
+    """Parse a grid parameter definition file and return a dictionary of parameters.
 
     Parameters:
     -----------
     filename : str
-        Path to the grid parameter definition file
+        Full path to a grid parameter definition file
+       or
+        Name of a gpd file in the references directory.
 
     Returns:
     --------
@@ -161,10 +170,14 @@ def parse_gpd_file(gpd_name: str) -> dict:
         Decimal numbers are converted to np.float64
         Integer-like numbers are converted to np.long
         Non-numeric values remain as strings
+
     """
     gpd_info = {}
 
-    filename = f'{Path(__file__).parent}/reference/{gpd_name}'
+    if Path(gpd_name).exists():
+        filename = gpd_name
+    else:
+        filename = f'{Path(__file__).parent}/reference/{gpd_name}'
 
     with open(filename, encoding='utf-8') as f:
         for line in f:
@@ -183,3 +196,49 @@ def parse_gpd_file(gpd_name: str) -> dict:
                     gpd_info[key] = convert_value(value)
 
     return gpd_info
+
+
+def compute_dims(grid_info: dict) -> (DataArray, DataArray):
+    """Compute the coordinate dimension.
+
+    Parameters:
+    ----------
+    grid_info : dict
+       Internal grid information dictionary.
+
+    """
+
+    n_cols = grid_info["target"]["Grid Width"]
+    n_rows = grid_info["target"]["Grid Height"]
+    geotransform = geotransform_from_grid_info(grid_info)
+
+    # compute the x,y locations along a column and row
+    column_dimensions = [geotransform.col_row_to_xy(i, 0) for i in range(n_cols)]
+    row_dimensions = [geotransform.col_row_to_xy(0, i) for i in range(n_rows)]
+    # pull out dimension values
+    x_values = np.array([x for x, y in column_dimensions])
+    y_values = np.array([y for x, y in row_dimensions])
+
+    y_dim = xr.DataArray(
+        data=y_values,
+        dims=['y-dim'],
+        coords={'y-dim': y_values},
+        attrs={
+            'standard_name': 'projection_y_coordinate',
+            'long_name': 'y coordinate of projection',
+            'units': 'm'
+        }
+    )
+
+    x_dim = xr.DataArray(
+        data=x_values,
+        dims=['x-dim'],
+        coords={'x-dim': x_values},
+        attrs={
+            'standard_name': 'projection_x_coordinate',
+            'long_name': 'x coordinate of projection',
+            'units': 'm'
+        }
+    )
+
+    return (x_dim, y_dim)
