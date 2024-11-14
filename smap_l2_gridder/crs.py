@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 from xarray import DataArray
 import xarray as xr
+from pyproj.crs import CRS
 from pathlib import Path
 
 from .exceptions import InvalidGPDError
@@ -109,7 +110,7 @@ GPD_TO_WKT = {
 }
 
 
-def geotransform_from_grid_info(grid_info: dict) -> Geotransform:
+def geotransform_from_target_info(target_info: dict) -> Geotransform:
     """Return a geotransform from the grid_info dict.
 
     grid_info contains a parsed NSIDC gpd file.
@@ -122,7 +123,6 @@ def geotransform_from_grid_info(grid_info: dict) -> Geotransform:
     GT(5) n-s pixel resolution / pixel height (negative value for a north-up image).
 
     """
-    target_info = grid_info['target']
     validate_gpd_style(target_info)
     return Geotransform(
         target_info['Map Origin X'],
@@ -198,37 +198,32 @@ def parse_gpd_file(gpd_name: str) -> dict:
     return gpd_info
 
 
-def compute_dims(grid_info: dict) -> (DataArray, DataArray):
+def create_crs(target_info: dict) -> DataArray:
+    """Return the correct CRS for the target grid."""
+    crs = CRS(target_info['wkt'])
+    the_crs = xr.DataArray(data=b'', attrs={**crs.to_cf(), 'proj': crs.to_proj4()})
+    return the_crs
+
+
+def compute_dims(target_info: dict) -> (DataArray, DataArray):
     """Compute the coordinate dimension.
 
     Parameters:
     ----------
-    grid_info : dict
-       Internal grid information dictionary.
+    target_info : dict
+       target grid information dictionary.
 
     """
-
-    n_cols = grid_info["target"]["Grid Width"]
-    n_rows = grid_info["target"]["Grid Height"]
-    geotransform = geotransform_from_grid_info(grid_info)
+    n_cols = target_info["Grid Width"]
+    n_rows = target_info["Grid Height"]
+    geotransform = geotransform_from_target_info(target_info)
 
     # compute the x,y locations along a column and row
     column_dimensions = [geotransform.col_row_to_xy(i, 0) for i in range(n_cols)]
     row_dimensions = [geotransform.col_row_to_xy(0, i) for i in range(n_rows)]
     # pull out dimension values
-    x_values = np.array([x for x, y in column_dimensions])
-    y_values = np.array([y for x, y in row_dimensions])
-
-    y_dim = xr.DataArray(
-        data=y_values,
-        dims=['y-dim'],
-        coords={'y-dim': y_values},
-        attrs={
-            'standard_name': 'projection_y_coordinate',
-            'long_name': 'y coordinate of projection',
-            'units': 'm'
-        }
-    )
+    x_values = np.array([x for x, y in column_dimensions], dtype=np.float32)
+    y_values = np.array([y for x, y in row_dimensions], dtype=np.float32)
 
     x_dim = xr.DataArray(
         data=x_values,
@@ -237,8 +232,19 @@ def compute_dims(grid_info: dict) -> (DataArray, DataArray):
         attrs={
             'standard_name': 'projection_x_coordinate',
             'long_name': 'x coordinate of projection',
-            'units': 'm'
-        }
+            'units': 'm',
+        },
     )
-
+    y_dim = xr.DataArray(
+        data=y_values,
+        dims=['y-dim'],
+        coords=({'y-dim': y_values}),
+        attrs={
+            'standard_name': 'projection_y_coordinate',
+            'long_name': 'y coordinate of projection',
+            'units': 'm',
+        },
+    )
+    x_dim.encoding ={'_FillValue': None}
+    y_dim.encoding ={'_FillValue': None}
     return (x_dim, y_dim)

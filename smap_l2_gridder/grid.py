@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 
 
-from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file, compute_dims
+from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file, compute_dims, create_crs
 
 
 
@@ -34,9 +34,11 @@ def decode_grid(in_data: DataTree, output_file: str):
     for node_name in data_node_names:
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
-        x_dim, y_dim = compute_dims(grid_info)
+        x_dim, y_dim = compute_dims(grid_info['target'])
+        out_data[f'{node_name}/crs'] = create_crs(grid_info['target'])
         out_data[f'{node_name}/x-dim'] = x_dim
         out_data[f'{node_name}/y-dim'] = y_dim
+
         for var_name in vars_to_grid:
 
             gridded_var_data = grid_variable(in_data[node_name][var_name], grid_info)
@@ -47,6 +49,7 @@ def decode_grid(in_data: DataTree, output_file: str):
             out_data[f'{node_name}/{var_name}'].attrs = in_data[node_name][
                 var_name
             ].attrs
+            out_data[f'{node_name}/{var_name}'].attrs.update({'grid_mapping': "crs"})
             out_data[f'{node_name}/{var_name}'].encoding.update(
                 {'_FillValue': variable_fill_value(in_data[node_name][var_name])}
             )
@@ -57,6 +60,10 @@ def decode_grid(in_data: DataTree, output_file: str):
                     )
                 }
             )
+            if var_name != 'tb_time_utc':
+                out_data[f'{node_name}/{var_name}'].encoding.update(
+                    {'zlib': True, 'complevel': 6}
+                )
 
     # write the output data file.
     out_data.to_netcdf(output_file)
