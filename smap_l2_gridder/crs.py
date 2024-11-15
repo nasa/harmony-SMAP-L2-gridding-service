@@ -22,13 +22,13 @@ class Geotransform:
 
     def col_row_to_xy(self, col: int, row: int) -> tuple[np.float64, np.float64]:
         """Convert grid cell location to x,y coordinate."""
-        # Geotransform is from upper left corner as (0,0), so center of grid
-        # cell is (.5, .5)
-        col = col + .5
-        row = row + .5
+        # Geotransform is from upper left corner as (0,0), so Adjust input
+        # value to the center of grid at (.5, .5)
+        adj_col = col + .5
+        adj_row = row + .5
 
-        x = self.top_left_x + col * self.pixel_width + row * self.row_rotation
-        y = self.top_left_y + col * self.column_rotation + row * self.pixel_height
+        x = self.top_left_x + adj_col * self.pixel_width + adj_row * self.row_rotation
+        y = self.top_left_y + adj_col * self.column_rotation + adj_row * self.pixel_height
         return x, y
 
 
@@ -205,7 +205,7 @@ def create_crs(target_info: dict) -> DataArray:
     return the_crs
 
 
-def compute_dims(target_info: dict) -> (DataArray, DataArray):
+def compute_dims(target_info: dict) -> tuple[DataArray, DataArray]:
     """Compute the coordinate dimension.
 
     Parameters:

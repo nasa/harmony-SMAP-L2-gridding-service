@@ -22,51 +22,42 @@ def decode_grid(in_data: DataTree, output_file: str):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
 
-    # First stab. We know what to do with these files in PoC.
-    # copy over all the input metadata directly to the output file.
     out_data = transfer_metadata(in_data, out_data)
 
+    # We process grids from all top level groups that are not Metadata
     data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
 
-    # To regrid the variables: I will need to know the name of the child node,
-    # it's column index full location, it's row index full location, the target
-    # grid shape.
     for node_name in data_node_names:
+
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
+
+        # Add coordinates and CRS metadata
         x_dim, y_dim = compute_dims(grid_info['target'])
         out_data[f'{node_name}/crs'] = create_crs(grid_info['target'])
         out_data[f'{node_name}/x-dim'] = x_dim
         out_data[f'{node_name}/y-dim'] = y_dim
 
         for var_name in vars_to_grid:
-
-            gridded_var_data = grid_variable(in_data[node_name][var_name], grid_info)
-            # add variable to output data
-            out_data[f'{node_name}/{var_name}'] = DataArray(
-                gridded_var_data, dims=['y-dim', 'x-dim']
-            )
-            out_data[f'{node_name}/{var_name}'].attrs = in_data[node_name][
-                var_name
-            ].attrs
-            out_data[f'{node_name}/{var_name}'].attrs.update({'grid_mapping': "crs"})
-            out_data[f'{node_name}/{var_name}'].encoding.update(
-                {'_FillValue': variable_fill_value(in_data[node_name][var_name])}
-            )
-            out_data[f'{node_name}/{var_name}'].encoding.update(
-                {
-                    'coordinates': in_data[node_name][var_name].encoding.get(
-                        'coordinates', None
-                    )
-                }
-            )
-            if var_name != 'tb_time_utc':
-                out_data[f'{node_name}/{var_name}'].encoding.update(
-                    {'zlib': True, 'complevel': 6}
-                )
+            full_var_name = f'{node_name}/{var_name}'
+            out_data[full_var_name] = prepare_variable(in_data[full_var_name], grid_info)
 
     # write the output data file.
     out_data.to_netcdf(output_file)
+
+
+def prepare_variable(var: DataTree | DataArray, grid_info: dict ) -> DataArray:
+    """Grid and annotate intput Variable."""
+    grid_data = grid_variable(var, grid_info)
+    grid_data.attrs = {**var.attrs, 'grid_mapping': "crs"}
+    encoding = {
+        '_FillValue': variable_fill_value(var),
+        'coordinates': var.encoding.get('coordinates', None),
+        # can't zip strings
+        **({'zlib': True, 'complevel': 6} if var.name != 'tb_time_utc' else {})
+    }
+    grid_data.encoding.update(encoding)
+    return grid_data
 
 
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
@@ -87,8 +78,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     valid_cols = grid_info['src']['cols'].data[valid_mask]
     valid_values = var.data[valid_mask]
     grid[valid_rows, valid_cols] = valid_values
-    # TODO [MHS, 11/07/2024]  Add dimension names x-dim, y-dim?
-    return DataArray(grid)
+    return DataArray(grid, dims=['y-dim', 'x-dim'])
 
 
 def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating | None:
