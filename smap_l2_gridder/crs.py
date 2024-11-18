@@ -1,18 +1,20 @@
-""" Module containing information particular to geolocating the input data to a target grid.
+"""Info particular to geolocating the input data to a target grid."""
 
-"""
 from dataclasses import dataclass
-import numpy as np
-from xarray import DataArray
-import xarray as xr
-from pyproj.crs import CRS
 from pathlib import Path
 
+import numpy as np
+import xarray as xr
+from pyproj.crs import CRS
+from xarray import DataArray
+
 from .exceptions import InvalidGPDError
+
 
 @dataclass
 class Geotransform:
     """Class for holding a GDAL-style 6-element geotransform."""
+
     top_left_x: np.float64
     pixel_width: np.float64
     row_rotation: np.float64
@@ -22,29 +24,34 @@ class Geotransform:
 
     def col_row_to_xy(self, col: int, row: int) -> tuple[np.float64, np.float64]:
         """Convert grid cell location to x,y coordinate."""
-        # Geotransform is from upper left corner as (0,0), so Adjust input
-        # value to the center of grid at (.5, .5)
-        adj_col = col + .5
-        adj_row = row + .5
+        # Geotransform is defined from upper left corner as (0,0), so Adjust
+        # input value to the center of grid at (.5, .5)
+        adj_col = col + 0.5
+        adj_row = row + 0.5
 
         x = self.top_left_x + adj_col * self.pixel_width + adj_row * self.row_rotation
-        y = self.top_left_y + adj_col * self.column_rotation + adj_row * self.pixel_height
+        y = (
+            self.top_left_y
+            + adj_col * self.column_rotation
+            + adj_row * self.pixel_height
+        )
         return x, y
 
 
-# The authoritative value is found here: https://epsg.org/crs/wkt/id/6933
-# The pyproj CRS created from this string is the same as a CRS that has been
-# round tripped through the CRS creation process. So the output value on the
-# files CRS metadata may not match the authoritative value, but the use with
-# pyproj is the same.
+# The authoritative value of well known text strings is from epsg.org
+
+# The pyproj CRS created from this WKT string is the same as a CRS that has been
+# round tripped through the CRS creation process. But the output value on the
+# files CRS metadata may not match the authoritative value because of the
+# different varieties of WKT. That said, the CRS created by pyproj is the same.
 # i.e.
 # pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt() != epsg_6933_wkt
 # but
 # pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt())
 #   == pyproj.crs.CRS.from_wkt(epsg_6933_wkt)
 
-
 # NSIDC EASE-Grid 2.0 Global CRS definition
+# from: https://epsg.org/crs/wkt/id/6933
 epsg_6933_wkt = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 Global",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
@@ -74,6 +81,7 @@ epsg_6933_wkt = (
 )
 
 # NSIDC EASE-Grid 2.0 North CRS definition
+# from: https://epsg.org/crs/wkt/id/6931
 epsg_6931_wkt = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 North",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
@@ -136,8 +144,9 @@ def geotransform_from_target_info(target_info: dict) -> Geotransform:
 
 def validate_gpd_style(target_info: dict) -> None:
     """Raise error if the gpd is non-standard."""
-    if ((target_info['Grid Map Origin Column'] != -0.5) or
-        (target_info['Grid Map Origin Row'] != -0.5)):
+    if (target_info['Grid Map Origin Column'] != -0.5) or (
+        target_info['Grid Map Origin Row'] != -0.5
+    ):
         raise InvalidGPDError('Can not use non standard gpd.')
 
 
@@ -222,8 +231,8 @@ def compute_dims(target_info: dict) -> tuple[DataArray, DataArray]:
     column_dimensions = [geotransform.col_row_to_xy(i, 0) for i in range(n_cols)]
     row_dimensions = [geotransform.col_row_to_xy(0, i) for i in range(n_rows)]
     # pull out dimension values
-    x_values = np.array([x for x, y in column_dimensions], dtype=np.float32)
-    y_values = np.array([y for x, y in row_dimensions], dtype=np.float32)
+    x_values = np.array([x for x, y in column_dimensions], dtype=np.float64)
+    y_values = np.array([y for x, y in row_dimensions], dtype=np.float64)
 
     x_dim = xr.DataArray(
         data=x_values,
@@ -245,6 +254,6 @@ def compute_dims(target_info: dict) -> tuple[DataArray, DataArray]:
             'units': 'm',
         },
     )
-    x_dim.encoding ={'_FillValue': None}
-    y_dim.encoding ={'_FillValue': None}
+    x_dim.encoding = {'_FillValue': None}
+    y_dim.encoding = {'_FillValue': None}
     return (x_dim, y_dim)

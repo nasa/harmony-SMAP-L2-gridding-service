@@ -4,27 +4,19 @@ L2G data represents a gridded swath in an EASE projected grid.  These are the
 routines to translate the 1D intput arrays into the EASE grid output format
 """
 
-from xarray import DataTree, DataArray
-from numpy import ndarray, dtype
-from pathlib import Path
 import numpy as np
+from xarray import DataArray, DataTree
 
-
-from .crs import epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file, compute_dims, create_crs
-
+from .crs import compute_dims, create_crs, epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
 
 
 def process_input(in_data: DataTree, output_file: str):
-    decode_grid(in_data, output_file)
-
-
-def decode_grid(in_data: DataTree, output_file: str):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
 
     out_data = transfer_metadata(in_data, out_data)
 
-    # We process grids from all top level groups that are not Metadata
+    # Process grids from all top level groups that are not only Metadata
     data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
 
     for node_name in data_node_names:
@@ -32,7 +24,7 @@ def decode_grid(in_data: DataTree, output_file: str):
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
 
-        # Add coordinates and CRS metadata
+        # Add coordinates and CRS metadata for this node_name
         x_dim, y_dim = compute_dims(grid_info['target'])
         out_data[f'{node_name}/crs'] = create_crs(grid_info['target'])
         out_data[f'{node_name}/x-dim'] = x_dim
@@ -40,13 +32,15 @@ def decode_grid(in_data: DataTree, output_file: str):
 
         for var_name in vars_to_grid:
             full_var_name = f'{node_name}/{var_name}'
-            out_data[full_var_name] = prepare_variable(in_data[full_var_name], grid_info)
+            out_data[full_var_name] = prepare_variable(
+                in_data[full_var_name], grid_info
+            )
 
     # write the output data file.
     out_data.to_netcdf(output_file)
 
 
-def prepare_variable(var: DataTree | DataArray, grid_info: dict ) -> DataArray:
+def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput Variable."""
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': "crs"}
@@ -54,7 +48,7 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict ) -> DataArray:
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
         # can't zip strings
-        **({'zlib': True, 'complevel': 6} if var.name != 'tb_time_utc' else {})
+        **({'zlib': True, 'complevel': 6} if var.name != 'tb_time_utc' else {}),
     }
     grid_data.encoding.update(encoding)
     return grid_data
@@ -71,7 +65,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     )
     try:
         valid_mask = ~np.isnan(var.data)
-    except TypeError as e:
+    except TypeError:
         # tb_time_utc is type string
         valid_mask = var.data != ""
     valid_rows = grid_info['src']['rows'].data[valid_mask]
@@ -84,7 +78,13 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
 def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating | None:
     """Determine the correct fill value for the input variable.
 
-    TODO [MHS, 11/07/2024] I'm not 100% sure how to simplify this if the fill values could be 0.
+    a fill value is found by searching in order:
+      - encoding._FillValue
+      - attrs._FillValue
+      - missing_value
+
+    If not found, a default_fill_value is determined base on the input
+    varaiable datatype.
     """
     fill_value = var.encoding.get('_FillValue')
     if fill_value is None:
@@ -99,8 +99,8 @@ def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating |
 def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating | None:
     """Return an appropriate fill value for the input data type.
 
-    # TODO [MHS, 11/07/2024] I am going with the code from get_special_fill_value type
-    from before. but I'm not sure if it's a good idea.
+    # TODO [MHS, 11/07/2024] I am going with the code from
+    # get_special_fill_value but I'm not sure if it's a good idea.
 
     """
     if not np.issubdtype(data_type, np.number):
@@ -113,22 +113,21 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
 
 
 def get_target_variables(in_data: DataTree, node: str) -> list[str]:
-    """get variables to be regridded in the output file.
+    """Get variables to be regridded in the output file.
 
-    TODO [MHS, 11/07/2024]: This might be all variables, but also might have
-    some special handling cases in the future. In this PoC it's just these.
-
+    TODO [MHS, 11/07/2024]: This is all variables now, but also might have
+    some special handling cases in the future.
     """
-    return [var for var in in_data[node]]
+    return in_data[node].variables
 
 
 def get_grid_information(in_data: DataTree, node: str) -> dict:
-    """Get the column, row index locations and grid information for this node.
+    """Get the column and row index locations and grid information for this node.
 
     For the PoC this will always be "node/EASE_column_index",
     "node/EASE_row_index", and EASE Grid 9km data either global or north grid.
 
-    TODO [MHS, 11/06/2024] This goes in a different file later with logic to
+    TODO [MHS, 11/06/2024] This might go in a different file later with logic to
     suss which grid each node is representing.
 
     """
