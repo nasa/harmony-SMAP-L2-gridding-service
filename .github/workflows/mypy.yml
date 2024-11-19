@@ -25,7 +25,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install mypy
-        pip install -r pip_requirements.txt
+        pip install -r pip_requirements.txt -r pip_dev_requirements.txt
 
     - name: Run mypy
       run: mypy .
