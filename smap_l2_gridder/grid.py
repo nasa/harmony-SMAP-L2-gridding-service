@@ -4,6 +4,8 @@ L2G data represents a gridded swath in an EASE projected grid.  These are the
 routines to translate the 1D intput arrays into the EASE grid output format
 """
 
+from typing import Iterable
+
 import numpy as np
 from xarray import DataArray, DataTree
 
@@ -105,20 +107,20 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     """
     if not np.issubdtype(data_type, np.number):
         return None
-    if np.issubdtype(data_type, np.floating):
+    elif np.issubdtype(data_type, np.floating):
         return np.dtype(data_type).type(-9999.0)
-    if np.issubdtype(data_type, np.integer):
+    else:
+        # np.issubdtype(data_type, np.integer):
         return np.dtype(data_type).type(np.iinfo(data_type).max)
-    return None
 
 
-def get_target_variables(in_data: DataTree, node: str) -> list[str]:
+def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
     """Get variables to be regridded in the output file.
 
     TODO [MHS, 11/07/2024]: This is all variables now, but also might have
     some special handling cases in the future.
     """
-    return list(in_data[node].variables)
+    return in_data[node].data_vars
 
 
 def get_grid_information(in_data: DataTree, node: str) -> dict:

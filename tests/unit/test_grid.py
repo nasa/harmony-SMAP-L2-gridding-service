@@ -75,6 +75,22 @@ def sample_datatree(tmp_path):
                 '_FillValue': np.float32(-9999.0),
             },
         )
+
+        dt[f'{node}/tb_time_utc'] = DataArray(
+            data=np.array(
+                [
+                    '2024-11-06T03:59:27.313Z',
+                    '2024-11-06T03:59:25.754Z',
+                    '2024-11-06T03:59:24.374Z',
+                    '2024-11-06T03:59:22.735Z',
+                    '2024-11-06T03:59:21.191Z',
+                ],
+                dtype='<U24',
+            ),
+            dims=['phony_dim_0'],
+            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+        )
+
     tmp_file = tmp_path / 'tmp_output.nc'
     dt.to_netcdf(tmp_file)
     dt2 = xr.open_datatree(tmp_file, decode_times=False)
@@ -215,6 +231,27 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     assert result.dims == ('y-dim', 'x-dim')
     assert result.shape == (5, 5)
     np.testing.assert_array_almost_equal(expected_column, result)
+
+
+def test_grid_variable_string(sample_datatree, sample_grid_info):
+    """Test grid_variable function."""
+    var = sample_datatree['Soil_Moisture_Retrieval_Data_Polar/tb_time_utc']
+    result = grid_variable(var, sample_grid_info)
+
+    expected_utc = np.full((5, 5), 'None').astype('<U24')
+
+    # The row/col is just the diaganol values.
+    for idx in range(len(var)):
+        expected_utc[idx, idx] = var.data[idx]
+
+    assert isinstance(result, DataArray)
+    assert result.dims == ('y-dim', 'x-dim')
+    assert result.shape == (5, 5)
+    # There is a problem comparing the arrays directly with
+    # np.testing.assert_arrays_equal (mixed data type promotion?). So just
+    # iterate over every value and and compare them directly.
+    for actual, expected in zip(np.nditer(result.data), np.nditer(expected_utc)):
+        assert actual == expected
 
 
 def test_variable_fill_value(mocker):
