@@ -118,7 +118,7 @@ def get_target_variables(in_data: DataTree, node: str) -> list[str]:
     TODO [MHS, 11/07/2024]: This is all variables now, but also might have
     some special handling cases in the future.
     """
-    return in_data[node].variables
+    return list(in_data[node].variables)
 
 
 def get_grid_information(in_data: DataTree, node: str) -> dict:
