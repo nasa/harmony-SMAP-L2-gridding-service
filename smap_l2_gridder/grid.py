@@ -59,7 +59,6 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Regrid the input 1D variable into a 2D grid using the grid_info."""
     fill_val = variable_fill_value(var)
-    print(f'{var.name} fill: {fill_val}: {type(fill_val)}')
     grid = np.full(
         (grid_info['target']['Grid Height'], grid_info['target']['Grid Width']),
         fill_val,
