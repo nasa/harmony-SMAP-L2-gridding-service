@@ -43,7 +43,7 @@ def process_input(in_data: DataTree, output_file: str):
 
 
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
-    """Grid and annotate intput Variable."""
+    """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': "crs"}
     encoding = {
@@ -100,9 +100,13 @@ def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating |
 def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating | None:
     """Return an appropriate fill value for the input data type.
 
-    # TODO [MHS, 11/07/2024] I am going with the code from
-    # get_special_fill_value but I'm not sure if it's a good idea.
+    These values were pulled from the on-prem system's
+    get_special_fill_value routine.
 
+    it returns:
+      - None if type isn't numeric
+      - -9999.0 if type is floating
+      - Max value if type is an integer.
     """
     if not np.issubdtype(data_type, np.number):
         return None

@@ -8,7 +8,7 @@ import xarray as xr
 from pyproj.crs import CRS
 from xarray import DataArray
 
-from .exceptions import InvalidGPDError
+from smap_l2_gridder.exceptions import InvalidGPDError
 
 
 @dataclass
@@ -24,7 +24,7 @@ class Geotransform:
 
     def col_row_to_xy(self, col: int, row: int) -> tuple[np.float64, np.float64]:
         """Convert grid cell location to x,y coordinate."""
-        # Geotransform is defined from upper left corner as (0,0), so Adjust
+        # Geotransform is defined from upper left corner as (0,0), so adjust
         # input value to the center of grid at (.5, .5)
         adj_col = col + 0.5
         adj_row = row + 0.5

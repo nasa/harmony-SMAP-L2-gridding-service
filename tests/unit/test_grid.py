@@ -27,7 +27,7 @@ def sample_datatree(tmp_path):
     It is round tripped to a temporary disk location for easy of setting the
     correct NetCDF attributes.
 
-    This represents the expected shape of an L2_SMPE granule.
+    This represents the expected shape of an SPL2SMP_E granule.
     The data is repeated for both global and polar nodes.
 
     """
@@ -223,7 +223,7 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     result = grid_variable(var, sample_grid_info)
 
     expected_column = np.full((5, 5), np.uint16(65534))
-    # The row/col is just the diaganol values.
+    # The row/col is just the diagonal values.
     for idx in range(len(var)):
         expected_column[idx, idx] = var.data[idx]
 
@@ -240,7 +240,7 @@ def test_grid_variable_string(sample_datatree, sample_grid_info):
 
     expected_utc = np.full((5, 5), 'None').astype('<U24')
 
-    # The row/col is just the diaganol values.
+    # The row/col is just the diagonal values.
     for idx in range(len(var)):
         expected_utc[idx, idx] = var.data[idx]
 
