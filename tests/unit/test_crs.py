@@ -8,11 +8,11 @@ import pytest
 from xarray import DataArray
 
 from smap_l2_gridder.crs import (
+    EPSG_6933_WKT,
     Geotransform,
     compute_dims,
     convert_value,
     create_crs,
-    epsg_6933_wkt,
     geotransform_from_target_info,
     parse_gpd_file,
     validate_gpd_style,
@@ -32,7 +32,7 @@ sample_target_info = {
     'Grid Height': 10,
     'Grid Map Origin Column': -0.5,
     'Grid Map Origin Row': -0.5,
-    'wkt': epsg_6933_wkt,
+    'wkt': EPSG_6933_WKT,
 }
 
 

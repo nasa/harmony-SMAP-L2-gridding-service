@@ -11,7 +11,7 @@ from typing import Iterable
 import numpy as np
 from xarray import DataArray, DataTree, open_datatree
 
-from .crs import compute_dims, create_crs, epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
+from .crs import EPSG_6931_WKT, EPSG_6933_WKT, compute_dims, create_crs, parse_gpd_file
 
 
 def transform_l2g_input(
@@ -19,8 +19,9 @@ def transform_l2g_input(
 ) -> None:
     """Entrypoint for L2G-Gridding-Service.
 
-    Opens input and processes the data to a new output_file.
+    Opens input and processes the data to a new output file.
     """
+    logger.debug(f'Is this right {output_filename}?')
     with open_datatree(input_filename, decode_times=False) as in_data:
         process_input(in_data, output_filename, logger=logger)
 
@@ -123,11 +124,12 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     """
     if not np.issubdtype(data_type, np.number):
         return None
-    elif np.issubdtype(data_type, np.floating):
+
+    if np.issubdtype(data_type, np.floating):
         return np.dtype(data_type).type(-9999.0)
-    else:
-        # np.issubdtype(data_type, np.integer):
-        return np.dtype(data_type).type(np.iinfo(data_type).max)
+
+    # np.issubdtype(data_type, np.integer):
+    return np.dtype(data_type).type(np.iinfo(data_type).max)
 
 
 def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
@@ -166,10 +168,10 @@ def get_target_grid_information(node: str) -> dict:
     """Return the target grid informaton."""
     if is_polar_node(node):
         gpd_name = 'EASE2_N09km.gpd'
-        wkt = epsg_6931_wkt
+        wkt = EPSG_6931_WKT
     else:
         gpd_name = 'EASE2_M09km.gpd'
-        wkt = epsg_6933_wkt
+        wkt = EPSG_6933_WKT
 
     target_grid_info = parse_gpd_file(gpd_name)
     target_grid_info['wkt'] = wkt

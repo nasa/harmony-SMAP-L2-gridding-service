@@ -45,14 +45,14 @@ class Geotransform:
 # files CRS metadata may not match the authoritative value because of the
 # different varieties of WKT. That said, the CRS created by pyproj is the same.
 # i.e.
-# pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt() != epsg_6933_wkt
+# pyproj.crs.CRS.from_wkt(EPSG_6933_WKT).to_wkt() != EPSG_6933_WKT
 # but
-# pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(epsg_6933_wkt).to_wkt())
-#   == pyproj.crs.CRS.from_wkt(epsg_6933_wkt)
+# pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(EPSG_6933_WKT).to_wkt())
+#   == pyproj.crs.CRS.from_wkt(EPSG_6933_WKT)
 
 # NSIDC EASE-Grid 2.0 Global CRS definition
 # from: https://epsg.org/crs/wkt/id/6933
-epsg_6933_wkt = (
+EPSG_6933_WKT = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 Global",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
     'MEMBER["World Geodetic System 1984 (Transit)", ID["EPSG",1166]], '
@@ -82,7 +82,7 @@ epsg_6933_wkt = (
 
 # NSIDC EASE-Grid 2.0 North CRS definition
 # from: https://epsg.org/crs/wkt/id/6931
-epsg_6931_wkt = (
+EPSG_6931_WKT = (
     'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 North",'
     'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
     'MEMBER["World Geodetic System 1984 (Transit)", ID["EPSG",1166]], '
@@ -113,8 +113,8 @@ epsg_6931_wkt = (
 )
 
 GPD_TO_WKT = {
-    "EASE2_N09km.gpd": epsg_6931_wkt,
-    "EASE2_M09km.gpd": epsg_6933_wkt,
+    "EASE2_N09km.gpd": EPSG_6931_WKT,
+    "EASE2_M09km.gpd": EPSG_6933_WKT,
 }
 
 
@@ -156,8 +156,7 @@ def convert_value(value: str) -> str | np.float64 | np.long:
     try:
         if '.' in value:
             return np.float64(value)
-        else:
-            return np.long(value)
+        return np.long(value)
     except ValueError:
         return value
 
