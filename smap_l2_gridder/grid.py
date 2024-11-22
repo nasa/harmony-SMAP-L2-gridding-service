@@ -4,15 +4,28 @@ L2G data represents a gridded swath in an EASE projected grid.  These are the
 routines to translate the 1D intput arrays into the EASE grid output format
 """
 
+from logging import Logger
+from pathlib import Path
 from typing import Iterable
 
 import numpy as np
-from xarray import DataArray, DataTree
+from xarray import DataArray, DataTree, open_datatree
 
 from .crs import compute_dims, create_crs, epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
 
 
-def process_input(in_data: DataTree, output_file: str):
+def transform_l2g_input(
+    input_filename: Path, output_filename: Path, logger: Logger
+) -> None:
+    """Entrypoint for L2G-Gridding-Service.
+
+    Opens input and processes the data to a new output_file.
+    """
+    with open_datatree(input_filename, decode_times=False) as in_data:
+        process_input(in_data, output_filename, logger=logger)
+
+
+def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
 
@@ -62,7 +75,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     grid = np.full(
         (grid_info['target']['Grid Height'], grid_info['target']['Grid Width']),
         fill_val,
-        dtype=var.encoding['dtype'],
+        dtype=(var.encoding.get('dtype', var.dtype)),
     )
     try:
         valid_mask = ~np.isnan(var.data)
@@ -93,7 +106,7 @@ def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating |
     if fill_value is None:
         fill_value = var.attrs.get('missing_value')
     if fill_value is None:
-        fill_value = default_fill_value(var.encoding.get('dtype'))
+        fill_value = default_fill_value(var.encoding.get('dtype', var.dtype))
     return fill_value
 
 
@@ -150,10 +163,7 @@ def get_grid_information(in_data: DataTree, node: str) -> dict:
 
 
 def get_target_grid_information(node: str) -> dict:
-    """Return the target grid informaton.
-
-    TODO [MHS, 11/13/2024] This might be in the wrong file.
-    """
+    """Return the target grid informaton."""
     if is_polar_node(node):
         gpd_name = 'EASE2_N09km.gpd'
         wkt = epsg_6931_wkt

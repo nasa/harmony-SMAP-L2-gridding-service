@@ -76,25 +76,32 @@ def sample_datatree(tmp_path):
             },
         )
 
-        dt[f'{node}/tb_time_utc'] = DataArray(
-            data=np.array(
-                [
-                    '2024-11-06T03:59:27.313Z',
-                    '2024-11-06T03:59:25.754Z',
-                    '2024-11-06T03:59:24.374Z',
-                    '2024-11-06T03:59:22.735Z',
-                    '2024-11-06T03:59:21.191Z',
-                ],
-                dtype='<U24',
-            ),
-            dims=['phony_dim_0'],
-            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
-        )
+        # This part of the fixture REALLY slow. Including it adds 7 seconds!!
+        # to the run time of the pytests and there is only a single test that
+        # needs this.  I tested this function outside of pytest and it's not
+        # acting like a bottle neck so I'm not sure what to do. But for now
+        # I'll remove this and skip the test.
 
+        # dt[f'{node}/tb_time_utc'] = DataArray(
+        #     data=np.array(
+        #         [
+        #             '2024-11-06T03:59:27.313Z',
+        #             '2024-11-06T03:59:25.754Z',
+        #             '2024-11-06T03:59:24.374Z',
+        #             '2024-11-06T03:59:22.735Z',
+        #             '2024-11-06T03:59:21.191Z',
+        #         ],
+        #         dtype='<U24',
+        #     ),
+        #     dims=['phony_dim_0'],
+        #     attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+        # )
+
+    # Round trip this to a file so that the encoding values are what we see
+    # when we read from a NetCDF file.
     tmp_file = tmp_path / 'tmp_output.nc'
     dt.to_netcdf(tmp_file)
     dt2 = xr.open_datatree(tmp_file, decode_times=False)
-
     return dt2
 
 
@@ -233,6 +240,7 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_column, result)
 
 
+@pytest.mark.skip('Slow fixture')
 def test_grid_variable_string(sample_datatree, sample_grid_info):
     """Test grid_variable function."""
     var = sample_datatree['Soil_Moisture_Retrieval_Data_Polar/tb_time_utc']
@@ -251,7 +259,7 @@ def test_grid_variable_string(sample_datatree, sample_grid_info):
     # np.testing.assert_arrays_equal (mixed data type promotion?). So just
     # iterate over every value and and compare them directly.
     for actual, expected in zip(np.nditer(result.data), np.nditer(expected_utc)):
-        assert actual == expected
+        assert actual == expected, f'full comparison {result.data}\n{expected_utc}'
 
 
 def test_variable_fill_value(mocker):
