@@ -1,0 +1,23 @@
+#!/bin/bash
+###############################################################################
+#
+# Build a Docker container to run the test suite for the SMAP-L2-Gridding-Service
+#
+# To build the ghcr.io/nasa/smap-l2-gridder-test image, the
+# ghcr.io/nasa/smap-l2-gridder image must also be present
+# locally, as it is used as the base image in `docker/tests.Dockerfile`.
+#
+###############################################################################
+
+image="ghcr.io/nasa/smap-l2-gridder-test"
+tag=${1:-latest}
+
+
+# Look for old version of image and remove
+old=$(docker images | grep "$image" | grep "$tag" | awk '{print $3}')
+if [ ! -z "$old" ] && [ "$2" != "--no-delete" ]; then
+    docker rmi "$old"
+fi
+
+# Build the image
+docker build -t ${image}:${tag} -f docker/tests.Dockerfile .
