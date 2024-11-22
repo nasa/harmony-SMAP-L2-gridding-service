@@ -177,6 +177,8 @@ def get_metadata_children(in_data: DataTree) -> list[str]:
     List of top level datatree children containing metadata to transfer
     directly to output file.
 
+    Note: This returns a constant for now, but may require reading the in_data
+    in the future.
     """
     return ['Metadata']
 
