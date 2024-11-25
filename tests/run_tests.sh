@@ -11,8 +11,8 @@ STATUS=0
 
 # Run the standard set of unit tests, producing JUnit compatible output
 pytest --cov=smap_l2_gridder --cov=harmony_service \
-       --cov-report=html:coverage/reports \
-       --junitxml=tests/reports/test-results-"$(date +'%Y%m%d%H%M%S')".xml || STATUS=1
+       --cov-report=html:reports/coverage \
+       --junitxml=reports/test-reports/test-results-"$(date +'%Y%m%d%H%M%S')".xml || STATUS=1
 
 # Run pylint
 pylint smap_l2_gridder harmony_service --disable=W1203
