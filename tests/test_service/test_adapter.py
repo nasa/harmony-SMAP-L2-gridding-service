@@ -88,10 +88,26 @@ def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mock
         == 'WGS 84 / NSIDC EASE-Grid 2.0 North'
     )
     assert set(results['Soil_Moisture_Retrieval_Data_Polar'].variables) == set(
-        ['EASE_column_index', 'EASE_row_index', 'albedo', 'crs', 'x-dim', 'y-dim']
+        [
+            'EASE_column_index',
+            'EASE_row_index',
+            'albedo',
+            'crs',
+            'x-dim',
+            'y-dim',
+            'tb_time_utc',
+        ]
     )
     assert set(results['Soil_Moisture_Retrieval_Data'].variables) == set(
-        ['EASE_column_index', 'EASE_row_index', 'albedo', 'crs', 'x-dim', 'y-dim']
+        [
+            'EASE_column_index',
+            'EASE_row_index',
+            'albedo',
+            'crs',
+            'x-dim',
+            'y-dim',
+            'tb_time_utc',
+        ]
     )
 
 

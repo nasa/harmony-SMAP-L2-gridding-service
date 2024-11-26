@@ -3,6 +3,7 @@
 from datetime import datetime
 
 import numpy as np
+import pandas as pd
 import pytest
 from harmony_service_lib.util import bbox_to_geometry
 from pystac import Asset, Catalog, Item
@@ -65,26 +66,19 @@ def sample_datatree_file(tmp_path) -> str:
             },
         )
 
-        # This part of the fixture REALLY slow. Including it adds 7 seconds(!!)
-        # to the run time of the pytests and there is only a single test that
-        # needs this.  I tested this function outside of pytest and it's not
-        # acting like a bottle neck so I'm not sure what to do. But for now
-        # I'll remove this and skip the test.
-
-        # dt[f'{node}/tb_time_utc'] = DataArray(
-        #     data=np.array(
-        #         [
-        #             '2024-11-06T03:59:27.313Z',
-        #             '2024-11-06T03:59:25.754Z',
-        #             '2024-11-06T03:59:24.374Z',
-        #             '2024-11-06T03:59:22.735Z',
-        #             '2024-11-06T03:59:21.191Z',
-        #         ],
-        #         dtype='<U24',
-        #     ),
-        #     dims=['phony_dim_0'],
-        #     attrs={'long_name': 'Arithmetic average of the acquisition time...'},
-        # )
+        dt[f'{node}/tb_time_utc'] = DataArray(
+            data=pd.to_datetime(
+                [
+                    '2024-11-06T03:59:27.313Z',
+                    '2024-11-06T03:59:25.754Z',
+                    '2024-11-06T03:59:24.374Z',
+                    '2024-11-06T03:59:22.735Z',
+                    '2024-11-06T03:59:21.191Z',
+                ]
+            ).values,
+            dims=['phony_dim_0'],
+            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+        )
 
     # Round trip this to a file so that the encoding values are what we see
     # when we read from a NetCDF file.
