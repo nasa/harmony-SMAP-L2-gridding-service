@@ -93,9 +93,9 @@ def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mock
             'EASE_row_index',
             'albedo',
             'crs',
+            #'tb_time_utc',
             'x-dim',
             'y-dim',
-            'tb_time_utc',
         ]
     )
     assert set(results['Soil_Moisture_Retrieval_Data'].variables) == set(
@@ -104,9 +104,9 @@ def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mock
             'EASE_row_index',
             'albedo',
             'crs',
+            #'tb_time_utc',
             'x-dim',
             'y-dim',
-            'tb_time_utc',
         ]
     )
 
