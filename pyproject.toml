@@ -1,0 +1,4 @@
+
+[[tool.mypy.overrides]]
+module = "harmony_service_lib.*"
+ignore_missing_imports = true

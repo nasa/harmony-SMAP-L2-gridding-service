@@ -120,7 +120,7 @@ def stack_catalog() -> Catalog:
         bbox=[-180, -90, 180, 90],
         geometry=bbox_to_geometry([-180, -90, 180, 90]),
         datetime=datetime(2020, 1, 1),
-        properties=None,
+        properties={'props': 'None'},
     )
 
     item.add_asset(
