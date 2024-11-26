@@ -1,11 +1,16 @@
-# smap-l2-gridder
+# SMAP L2 Gridding Service
 
-This is a python service to transform NASA level 2 Grid trajectory data into gridded NetCDF4-CF output files.
+This repository contains the code for the SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
+
+This code currently works on `SPL2SMP_E` data and will be adapted for other gridded trajectory data.
+
+
+
+
 
 
 ## Transform Data
-
-To run the regridder you can create an isolated python 3.12 environment installing packages from the `pip_requirements.txt` file.
+To run the regridder, first create an isolated python 3.12 environment using packages from the `pip_requirements.txt` file.
 
 From the commandline run:
 
