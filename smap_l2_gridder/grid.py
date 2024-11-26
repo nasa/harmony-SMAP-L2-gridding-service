@@ -21,7 +21,6 @@ def transform_l2g_input(
 
     Opens input and processes the data to a new output file.
     """
-    logger.debug(f'Is this right {output_filename}?')
     with open_datatree(input_filename, decode_times=False) as in_data:
         process_input(in_data, output_filename, logger=logger)
 
