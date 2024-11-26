@@ -47,7 +47,7 @@ class SMAPL2GridderAdapter(BaseHarmonyAdapter):
                 working_filename = Path(input_filepath).parent / 'working_gridded.nc'
 
                 final_target_filename = generate_output_filename(
-                    asset.href, is_regridded=True
+                    asset.href, is_regridded=True, ext='.nc'
                 )
 
                 transform_l2g_input(
