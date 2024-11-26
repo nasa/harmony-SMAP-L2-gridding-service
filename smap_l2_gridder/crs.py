@@ -222,8 +222,8 @@ def compute_dims(target_info: dict) -> tuple[DataArray, DataArray]:
        target grid information dictionary.
 
     """
-    n_cols = target_info["Grid Width"]
-    n_rows = target_info["Grid Height"]
+    n_cols = target_info['Grid Width']
+    n_rows = target_info['Grid Height']
     geotransform = geotransform_from_target_info(target_info)
 
     # compute the x,y locations along a column and row

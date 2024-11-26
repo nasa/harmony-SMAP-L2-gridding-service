@@ -1,1 +1,1 @@
-"""Initialize service tests module."""
+"""Initialize service tests package."""

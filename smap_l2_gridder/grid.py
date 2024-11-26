@@ -58,7 +58,7 @@ def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = 
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
-    grid_data.attrs = {**var.attrs, 'grid_mapping': "crs"}
+    grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
@@ -81,7 +81,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
         valid_mask = ~np.isnan(var.data)
     except TypeError:
         # tb_time_utc is type string
-        valid_mask = var.data != ""
+        valid_mask = var.data != ''
     valid_rows = grid_info['src']['rows'].data[valid_mask]
     valid_cols = grid_info['src']['cols'].data[valid_mask]
     valid_values = var.data[valid_mask]

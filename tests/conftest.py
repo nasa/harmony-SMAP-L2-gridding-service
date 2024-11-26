@@ -14,41 +14,41 @@ from xarray import DataArray, DataTree, open_datatree
 def sample_datatree_file(tmp_path) -> str:
     """Create a sample DataTree file for testing.
 
+    A sample DataTree is created
+
     The test data is repeated for both global and polar nodes.
 
-    A sample DataTree is created and written to disk.
-
-    The filename is returned.
+    The tree is written to disk and the filename is returned.
     """
     dt = DataTree()
-    dt["Metadata/Lineage/DEMSLP"] = DataTree()
-    dt["Metadata/Lineage/DEMSLP"].attrs[
-        "Description"
-    ] = "Representative surface slope data for each of the 9 km cells"
+    dt['Metadata/Lineage/DEMSLP'] = DataTree()
+    dt['Metadata/Lineage/DEMSLP'].attrs[
+        'Description'
+    ] = 'Representative surface slope data for each of the 9 km cells'
 
-    nodes = ["Soil_Moisture_Retrieval_Data", "Soil_Moisture_Retrieval_Data_Polar"]
+    nodes = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
     for node in nodes:
-        dt[f"{node}"] = DataTree()
-        dt[f"{node}/EASE_column_index"] = DataArray(
+        dt[f'{node}'] = DataTree()
+        dt[f'{node}/EASE_column_index'] = DataArray(
             data=np.array([1175, 1175, 1175, 1175, 1175], dtype=np.uint16),
-            dims=["phony_dim_0"],
-            name="EASE_column_index",
+            dims=['phony_dim_0'],
+            name='EASE_column_index',
             attrs={
-                "long_name": "The column index of the 9 km EASE grid cell...",
-                "valid_min": 0,
-                "valid_max": 3855,
-                "_FillValue": np.uint16(65534),
+                'long_name': 'The column index of the 9 km EASE grid cell...',
+                'valid_min': 0,
+                'valid_max': 3855,
+                '_FillValue': np.uint16(65534),
             },
         )
 
-        dt[f"{node}/EASE_row_index"] = DataArray(
+        dt[f'{node}/EASE_row_index'] = DataArray(
             data=np.array([1603, 1604, 1605, 1606, 1607], dtype=np.uint16),
-            dims=["phony_dim_0"],
+            dims=['phony_dim_0'],
             attrs={
-                "long_name": "The row index of the 9 km EASE grid cell...",
-                "valid_min": 0,
-                "valid_max": 1623,
-                "_FillValue": np.uint16(65534),
+                'long_name': 'The row index of the 9 km EASE grid cell...',
+                'valid_min': 0,
+                'valid_max': 1623,
+                '_FillValue': np.uint16(65534),
             },
         )
 
@@ -95,9 +95,9 @@ def sample_datatree_file(tmp_path) -> str:
 
 @pytest.fixture
 def sample_datatree(sample_datatree_file) -> DataTree:
-    """A sample datatree is gennerated and returned after being read from disk.
+    """A sample datatree fixture is generated, opened and returned.
 
-    This represents the expected shape of an SPL2SMP_E granule.
+    This approximates the expected shape of an SPL2SMP_E granule.
     """
     dt2 = open_datatree(sample_datatree_file, decode_times=False)
     return dt2

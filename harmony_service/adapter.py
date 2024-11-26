@@ -43,13 +43,12 @@ class SMAPL2GridderAdapter(BaseHarmonyAdapter):
                     cfg=self.config,
                     access_token=self.message.accessToken,
                 )
-                print(f'input_filepath: {input_filepath}')
+
                 working_filename = Path(input_filepath).parent / 'working_gridded.nc'
 
                 final_target_filename = generate_output_filename(
                     asset.href, is_regridded=True
                 )
-                print(f'final_target_filename:{final_target_filename}')
 
                 transform_l2g_input(
                     input_filepath, working_filename, logger=self.logger
