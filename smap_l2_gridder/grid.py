@@ -35,7 +35,6 @@ def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = 
     data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
 
     for node_name in data_node_names:
-
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
 

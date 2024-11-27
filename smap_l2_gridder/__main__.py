@@ -23,7 +23,7 @@ def main():
         with open_datatree(args.input, decode_times=False) as in_data:
             process_input(in_data, Path(args.output))
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f'Error occurred: {e}')
         raise e
     print(f'successfully processed {args.input} into {args.output}')
     return 0

@@ -93,7 +93,7 @@ def test_parse_gpd_file(tmp_path):
     """
     ).strip()
 
-    gpd_file = tmp_path / "test.gpd"
+    gpd_file = tmp_path / 'test.gpd'
     gpd_file.write_text(gpd_content)
 
     result = parse_gpd_file(str(gpd_file))

@@ -40,7 +40,7 @@ def test_process_input(sample_datatree, tmp_path):
     as well as some of the metadata was generated properly.
 
     """
-    out_file = tmp_path / "output.nc"
+    out_file = tmp_path / 'output.nc'
     process_input(sample_datatree, out_file)
     assert Path(out_file).exists()
     out_dt = xr.open_datatree(out_file)
@@ -65,14 +65,14 @@ def test_transfer_metadata(sample_datatree):
     test_metadata = {'size': 3.5, 'age': 23, 'processing': 'complete'}
     additional_metadata = DataTree()
     additional_metadata.attrs = test_metadata
-    sample_datatree["Metadata/testing"] = additional_metadata
+    sample_datatree['Metadata/testing'] = additional_metadata
 
     out_dt = transfer_metadata(sample_datatree, out_dt)
     assert (
         out_dt['Metadata/Lineage/DEMSLP'].attrs['Description']
         == 'Representative surface slope data for each of the 9 km cells'
     )
-    assert out_dt["Metadata/testing"].attrs == test_metadata
+    assert out_dt['Metadata/testing'].attrs == test_metadata
 
 
 def test_prepare_variable_albedo(sample_datatree, sample_grid_info):
@@ -115,7 +115,7 @@ def test_prepare_variable_encoding_of_utc_time(sample_datatree, sample_grid_info
 def test_get_grid_information(sample_datatree, mocker):
     """Verify correct information is returned as grid_info."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
-    node = "Soil_Moisture_Retrieval_Data_Polar"
+    node = 'Soil_Moisture_Retrieval_Data_Polar'
 
     actual_grid_info = get_grid_information(sample_datatree, node)
     np.testing.assert_array_almost_equal(
@@ -131,10 +131,10 @@ def test_get_target_grid_information(mocker):
     """Test that the node name correctly identifies the gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information("any-node-name")
+    get_target_grid_information('any-node-name')
     parse_gpd_file_mock.assert_called_with('EASE2_M09km.gpd')
 
-    get_target_grid_information("any-node-name_Polar")
+    get_target_grid_information('any-node-name_Polar')
     parse_gpd_file_mock.assert_called_with('EASE2_N09km.gpd')
 
 

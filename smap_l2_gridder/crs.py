@@ -113,8 +113,8 @@ EPSG_6931_WKT = (
 )
 
 GPD_TO_WKT = {
-    "EASE2_N09km.gpd": EPSG_6931_WKT,
-    "EASE2_M09km.gpd": EPSG_6933_WKT,
+    'EASE2_N09km.gpd': EPSG_6931_WKT,
+    'EASE2_M09km.gpd': EPSG_6933_WKT,
 }
 
 
@@ -189,7 +189,6 @@ def parse_gpd_file(gpd_name: str) -> dict:
 
     with open(filename, encoding='utf-8') as f:
         for line in f:
-
             line = line.strip()
             if not line or line.startswith(';'):
                 continue
