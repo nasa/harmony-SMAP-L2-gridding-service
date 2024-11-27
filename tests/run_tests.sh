@@ -12,6 +12,7 @@ STATUS=0
 # Run the standard set of unit tests, producing JUnit compatible output
 pytest --cov=smap_l2_gridder --cov=harmony_service \
        --cov-report=html:reports/coverage \
+       --cov-report term \
        --junitxml=reports/test-reports/test-results-"$(date +'%Y%m%d%H%M%S')".xml || STATUS=1
 
 # Run pylint

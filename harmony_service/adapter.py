@@ -14,7 +14,7 @@ from tempfile import TemporaryDirectory
 from harmony_service_lib import BaseHarmonyAdapter
 from harmony_service_lib.message import Source as HarmonySource
 from harmony_service_lib.util import download, generate_output_filename, stage
-from pystac import Asset, Item
+from pystac import Asset, Catalog
 
 from smap_l2_gridder.grid import transform_l2g_input
 
@@ -22,16 +22,16 @@ from smap_l2_gridder.grid import transform_l2g_input
 class SMAPL2GridderAdapter(BaseHarmonyAdapter):
     """Custom adapter for Harmony-SMAP-L2-Gridder Service."""
 
-    def process_item(self, item: Item, source: HarmonySource) -> Item:
+    def process_item(self, catalog: Catalog, source: HarmonySource) -> Catalog:
         """Process single input STAC item."""
         with TemporaryDirectory() as working_directory:
             try:
-                results = item.clone()
+                results = catalog.clone()
                 results.assets = {}
 
                 asset = next(
                     item_asset
-                    for item_asset in item.assets.values()
+                    for item_asset in catalog.assets.values()
                     if 'data' in (item_asset.roles or [])
                 )
 
