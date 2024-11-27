@@ -4,9 +4,9 @@ L2G data represents a gridded swath in an EASE projected grid.  These are the
 routines to translate the 1D intput arrays into the EASE grid output format
 """
 
+from collections.abc import Iterable
 from logging import Logger
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 from xarray import DataArray, DataTree, open_datatree
