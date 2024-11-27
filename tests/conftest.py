@@ -104,7 +104,7 @@ def sample_datatree(sample_datatree_file) -> DataTree:
 
 
 @pytest.fixture
-def stack_catalog() -> Catalog:
+def sample_stac() -> Catalog:
     """Creates a generic SpatioTemporal Asset Catalog (STAC).
 
     Used as a valid input for SMAPL2GridderAdapter initialization

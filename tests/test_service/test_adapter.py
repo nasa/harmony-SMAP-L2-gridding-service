@@ -9,7 +9,7 @@ from harmony_service.adapter import SMAPL2GridderAdapter
 from smap_l2_gridder.exceptions import InvalidGPDError
 
 
-def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mocker):
+def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker):
     """Run a sample file through the adapter."""
     # override the adapter's working dir
     temp_dir_mock = mocker.patch('harmony_service.adapter.TemporaryDirectory')
@@ -40,13 +40,13 @@ def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mock
 
     # Set up Adapter class
     smap_l2_gridding_service = SMAPL2GridderAdapter(
-        message, config=config(validate=False), catalog=stack_catalog
+        message, config=config(validate=False), catalog=sample_stac
     )
 
     # Invoke the adapter.
     _, _ = smap_l2_gridding_service.invoke()
 
-    asset_href = stack_catalog.get_item('input granule').assets['input data'].href
+    asset_href = sample_stac.get_item('input granule').assets['input data'].href
 
     download_mock.assert_called_once_with(
         asset_href,
@@ -112,7 +112,7 @@ def test_process_sample_file(tmp_path, sample_datatree_file, stack_catalog, mock
 
 
 def test_process_sample_file_failure(
-    tmp_path, stack_catalog, sample_datatree_file, mocker
+    tmp_path, sample_stac, sample_datatree_file, mocker
 ):
     """Test failure."""
     # use a datatree fixture as the downloaded file
@@ -132,7 +132,7 @@ def test_process_sample_file_failure(
 
     # Set up Adapter class
     smap_l2_gridding_service = SMAPL2GridderAdapter(
-        message, config=config(validate=False), catalog=stack_catalog
+        message, config=config(validate=False), catalog=sample_stac
     )
 
     # Invoke the adapter.
