@@ -1,6 +1,17 @@
+[tool.ruff]
+lint.select = [
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "UP",  # pyupgrade
+  "I",   # organize imports
+  "D",   # docstyle
+]
+
 [tool.ruff.format]
 quote-style = "single"
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [[tool.mypy.overrides]]
 module = "harmony_service_lib.*"
