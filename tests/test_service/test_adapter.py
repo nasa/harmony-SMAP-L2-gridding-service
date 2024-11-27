@@ -25,7 +25,10 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
     filename_mock.return_value = output_filename
 
     stage_mock = mocker.patch('harmony_service.adapter.stage')
+    stage_mock.return_value = 's3://bucketname/staged-location'
     staging_dir = tmp_path / 'staging'
+
+    asset_mock = mocker.patch('harmony_service.adapter.Asset')
 
     message = HarmonyMessage(
         {
@@ -39,12 +42,13 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
     )
 
     # Set up Adapter class
+    the_config = config(validate=False)
     smap_l2_gridding_service = SMAPL2GridderAdapter(
-        message, config=config(validate=False), catalog=sample_stac
+        message, config=the_config, catalog=sample_stac
     )
 
     # Invoke the adapter.
-    _, _ = smap_l2_gridding_service.invoke()
+    smap_l2_gridding_service.invoke()
 
     asset_href = sample_stac.get_item('input granule').assets['input data'].href
 
@@ -52,7 +56,7 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
         asset_href,
         tmp_path,
         logger=mocker.ANY,
-        cfg=mocker.ANY,
+        cfg=the_config,
         access_token=message.accessToken,
     )
 
@@ -63,6 +67,13 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
         location=message.stagingLocation,
         logger=mocker.ANY,
         cfg=mocker.ANY,
+    )
+
+    asset_mock.assert_called_once_with(
+        's3://bucketname/staged-location',
+        title=mocker.ANY,
+        media_type='application/x-netcdf4',
+        roles=['data'],
     )
 
     # Validate the gridded output data
