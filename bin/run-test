@@ -1,7 +1,7 @@
 #!/bin/bash
 ###############################################################################
 #
-# Execute the ghcr.io/nasa/smap-l2-gridder-test Docker image
+# Execute the ghcr.io/nasa/harmony-smap-l2-gridder-test Docker image
 #
 ###############################################################################
 
@@ -21,4 +21,4 @@ mkdir -p reports/coverage
 docker run  --rm \
 	-v $(pwd)/reports/test-reports:/home/reports/test-reports \
 	-v $(pwd)/reports/coverage:/home/reports/coverage \
-	ghcr.io/nasa/smap-l2-gridder-test "$@"
+	ghcr.io/nasa/harmony-smap-l2-gridder-test "$@"

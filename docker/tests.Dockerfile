@@ -5,7 +5,7 @@
 # of the service image are tested, preventing discrepancies between the service
 # and test environments.
 ###############################################################################
-FROM ghcr.io/nasa/smap-l2-gridder
+FROM ghcr.io/nasa/harmony-smap-l2-gridder
 
 # Install additional Pip requirements (for testing)
 COPY tests/pip_test_requirements.txt .

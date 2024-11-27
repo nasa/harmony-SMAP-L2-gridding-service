@@ -13,7 +13,7 @@ jobs:
         python-version: ['3.12']
 
     steps:
-    - name: Check out smap-l2-gridder code
+    - name: Check out harmony-SMAP-L2-gridding-service code
       uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}

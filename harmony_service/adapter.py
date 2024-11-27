@@ -20,7 +20,7 @@ from smap_l2_gridder.grid import transform_l2g_input
 
 
 class SMAPL2GridderAdapter(BaseHarmonyAdapter):
-    """Custom adapter for SMAP-L2-Gridder Service."""
+    """Custom adapter for Harmony-SMAP-L2-Gridder Service."""
 
     def process_item(self, item: Item, source: HarmonySource) -> Item:
         """Process single input STAC item."""

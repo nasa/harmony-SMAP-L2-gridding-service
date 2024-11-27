@@ -2,8 +2,8 @@
 #
 # Service image for ghcr.io/nasa/harmony-smap-l2-gridder
 
-# SMAP-L2-Gridder backend service that transforms L2G (gridded trajectory) data
-# into actual gridded data.
+# Harmony-SMAP-L2-Gridder backend service that transforms L2G (gridded
+# trajectory) data into actual gridded data.
 #
 # This image installs dependencies via Pip. The service code is then copied
 # into the Docker image.

@@ -2,7 +2,7 @@
 
 from harmony_service_lib.util import HarmonyException
 
-SERVICE_NAME = 'SMAP-L2-Gridder'
+SERVICE_NAME = 'Harmony-SMAP-L2-Gridder'
 
 
 class SMAPL2GridderServiceError(HarmonyException):
