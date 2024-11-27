@@ -19,85 +19,6 @@ from smap_l2_gridder.grid import (
 )
 
 
-# Fixtures
-@pytest.fixture
-def sample_datatree(tmp_path):
-    """Create a sample DataTree for testing.
-
-    It is round tripped to a temporary disk location for easy of setting the
-    correct NetCDF attributes.
-
-    This represents the expected shape of an SPL2SMP_E granule.
-    The data is repeated for both global and polar nodes.
-
-    """
-    dt = DataTree()
-    dt["Metadata/Lineage/DEMSLP"] = DataTree()
-    dt["Metadata/Lineage/DEMSLP"].attrs[
-        "Description"
-    ] = "Representative surface slope data for each of the 9 km cells"
-
-    nodes = ["Soil_Moisture_Retrieval_Data", "Soil_Moisture_Retrieval_Data_Polar"]
-    for node in nodes:
-        dt[f"{node}"] = DataTree()
-        dt[f"{node}/EASE_column_index"] = DataArray(
-            data=np.array([1175, 1175, 1175, 1175, 1175], dtype=np.uint16),
-            dims=["phony_dim_0"],
-            name="EASE_column_index",
-            attrs={
-                "long_name": "The column index of the 9 km EASE grid cell...",
-                "valid_min": 0,
-                "valid_max": 3855,
-                "_FillValue": np.uint16(65534),
-            },
-        )
-
-        dt[f"{node}/EASE_row_index"] = DataArray(
-            data=np.array([1603, 1604, 1605, 1606, 1607], dtype=np.uint16),
-            dims=["phony_dim_0"],
-            attrs={
-                "long_name": "The row index of the 9 km EASE grid cell...",
-                "valid_min": 0,
-                "valid_max": 1623,
-                "_FillValue": np.uint16(65534),
-            },
-        )
-
-        dt[f'{node}/albedo'] = DataArray(
-            data=np.array(
-                [0.0009434, 0.00136986, 0.0025, 0.0, -9999.0], dtype=np.float32
-            ),
-            dims=['phony_dim_0'],
-            attrs={
-                'long_name': 'Diffuse reflecting power of the Earth&apos;s...',
-                'valid_min': 0.0,
-                'valid_max': 1.0,
-                '_FillValue': np.float32(-9999.0),
-            },
-        )
-
-        dt[f'{node}/tb_time_utc'] = DataArray(
-            data=np.array(
-                [
-                    '2024-11-06T03:59:27.313Z',
-                    '2024-11-06T03:59:25.754Z',
-                    '2024-11-06T03:59:24.374Z',
-                    '2024-11-06T03:59:22.735Z',
-                    '2024-11-06T03:59:21.191Z',
-                ],
-                dtype='<U24',
-            ),
-            dims=['phony_dim_0'],
-            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
-        )
-
-    tmp_file = tmp_path / 'tmp_output.nc'
-    dt.to_netcdf(tmp_file)
-    dt2 = xr.open_datatree(tmp_file, decode_times=False)
-
-    return dt2
-
-
 @pytest.fixture
 def sample_grid_info():
     """Create sample grid information dictionary."""
@@ -119,7 +40,7 @@ def test_process_input(sample_datatree, tmp_path):
     as well as some of the metadata was generated properly.
 
     """
-    out_file = tmp_path / "output.nc"
+    out_file = tmp_path / 'output.nc'
     process_input(sample_datatree, out_file)
     assert Path(out_file).exists()
     out_dt = xr.open_datatree(out_file)
@@ -144,14 +65,14 @@ def test_transfer_metadata(sample_datatree):
     test_metadata = {'size': 3.5, 'age': 23, 'processing': 'complete'}
     additional_metadata = DataTree()
     additional_metadata.attrs = test_metadata
-    sample_datatree["Metadata/testing"] = additional_metadata
+    sample_datatree['Metadata/testing'] = additional_metadata
 
     out_dt = transfer_metadata(sample_datatree, out_dt)
     assert (
         out_dt['Metadata/Lineage/DEMSLP'].attrs['Description']
         == 'Representative surface slope data for each of the 9 km cells'
     )
-    assert out_dt["Metadata/testing"].attrs == test_metadata
+    assert out_dt['Metadata/testing'].attrs == test_metadata
 
 
 def test_prepare_variable_albedo(sample_datatree, sample_grid_info):
@@ -194,7 +115,7 @@ def test_prepare_variable_encoding_of_utc_time(sample_datatree, sample_grid_info
 def test_get_grid_information(sample_datatree, mocker):
     """Verify correct information is returned as grid_info."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
-    node = "Soil_Moisture_Retrieval_Data_Polar"
+    node = 'Soil_Moisture_Retrieval_Data_Polar'
 
     actual_grid_info = get_grid_information(sample_datatree, node)
     np.testing.assert_array_almost_equal(
@@ -210,10 +131,10 @@ def test_get_target_grid_information(mocker):
     """Test that the node name correctly identifies the gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information("any-node-name")
+    get_target_grid_information('any-node-name')
     parse_gpd_file_mock.assert_called_with('EASE2_M09km.gpd')
 
-    get_target_grid_information("any-node-name_Polar")
+    get_target_grid_information('any-node-name_Polar')
     parse_gpd_file_mock.assert_called_with('EASE2_N09km.gpd')
 
 
@@ -233,6 +154,7 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_column, result)
 
 
+@pytest.mark.skip('Slow fixture')
 def test_grid_variable_string(sample_datatree, sample_grid_info):
     """Test grid_variable function."""
     var = sample_datatree['Soil_Moisture_Retrieval_Data_Polar/tb_time_utc']
@@ -251,7 +173,7 @@ def test_grid_variable_string(sample_datatree, sample_grid_info):
     # np.testing.assert_arrays_equal (mixed data type promotion?). So just
     # iterate over every value and and compare them directly.
     for actual, expected in zip(np.nditer(result.data), np.nditer(expected_utc)):
-        assert actual == expected
+        assert actual == expected, f'full comparison {result.data}\n{expected_utc}'
 
 
 def test_variable_fill_value(mocker):

@@ -1,20 +1,88 @@
-# smap-l2-gridder
+# SMAP L2 Gridding Service
 
-This is a python service to transform NASA level 2 Grid trajectory data into gridded NetCDF4-CF output files.
+This repository contains the code for the SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
+
+This code currently works on `SPL2SMP_E` data and will be adapted for other SMAP collections of gridded trajectory data.
 
 
-## Transform Data
+## Transforming Data
 
-To run the regridder you can create an isolated python 3.12 environment installing packages from the `pip_requirements.txt` file.
+The logic of transforming data is contained in the `smap_l2_gridder` directory. It reads NASA L2 Gridded trajectory data and writes output NetCDF-CF files with the trajecotry style data correctly populated into EASE2 grids.
 
-From the commandline run:
+### Commandline invocation
+To run the regridder on an input file.  Create an isolated python 3.12 environment using packages from the `pip_requirements.txt` file and then from the commandline run:
 
 ```python
 python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_granule.nc
 ```
 
+`smap_l2_gridder/__main__.py` is the entrypoint to the science logic module and can be used for testing and development.
 
-## pre-commit hooks:
+## Directory structure
+
+```
+📁
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── 📁 bin
+├── 📁 docker
+├── 📁 harmony_service
+├── pip_requirements.txt
+├── pyproject.toml
+├── 📁 smap_l2_gridder
+└── 📁 tests
+```
+
+* `CHANGELOG.md` -   Contains a record of changes applied to each new release of the SMAP-L2-Gridding-Service.
+* `CONTRIBUTING.md` -  Instructions on how to contribute to the repository.
+* `LICENSE` - Required for distribution under NASA open-source approval. Details conditions for use, reproduction and distribution.
+* `README.md` - This file, containing guidance on developing the library and service.
+* `bin` - A directory containing utility scripts to build the service and test images. A script to extract the release notes for the most recent version, as contained in `CHANGELOG.md` is also in this directory.
+* `docker` - A directory containing the Dockerfiles for the service and test images. It also contains `service_version.txt`, which contains the semantic version number of the library and service image. Update this file with a new version to trigger a release.
+*  `harmony_service` - A directory containing the Harmony Service specific python code. `adapter.py` contains the `SMAPL2GridderAdapter` class that is invoked by calls to the Harmony service.
+* `pip_requirements.txt` - Contains a list of python packages needed to run the service.
+* `pyproject.toml` - Configuration file used by packaging tools, and other tools such as linters, type checkers, etc.
+* `smap_l2_gridder` - Python package containing the logic for reformatting L2G data.
+* `tests` -  Contains the pytest test suite.
+
+
+## Local development
+
+Local testing of service functionality can be achieved via a local instance of
+[Harmony](https://github.com/nasa/harmony) aka Harmony-In-A-Box. Please see instructions there
+regarding creation of a local Harmony instance.
+
+For local development and testing of library modifications or small functions independent of the main Harmony application:
+
+1. Create a Python virtual environment
+1. Install the dependencies in `pip_requirements.txt`, and `tests/pip_test_requirements.txt`
+1. Install the pre-commit hooks ([described below](#pre-commit-hooks)).
+
+
+## Tests
+
+This service utilises the Python `pytest` package to perform unit tests on
+classes and functions in the service. After local development is complete, and
+test have been updated, they can be run in Docker via:
+
+```bash
+$ ./bin/build-image
+$ ./bin/build-test
+$ ./bin/run-test
+```
+
+It is also possible to run the test scripts directly (without docker) by just running the `run_tests.sh` script with a proper python environment. Do note that the `reports` directory will appear in the directory you call the script from.
+
+The `tests/run_tests.sh` script will also generate a coverage report, rendered
+in HTML, and scan the code with `pylint`.
+
+Currently, the `pytest` suite is run automatically within a GitHub workflow
+as part of a CI/CD pipeline. These tests are run for all changes made in a PR
+against the `main` branch. The tests must pass in order to merge the PR.
+
+## `pre-commit` hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) to enable pre-commit
 checks that enforce coding standard best practices. These include:
@@ -35,3 +103,23 @@ pip install pre-commit
 # Install the git hook scripts:
 pre-commit install
 ```
+
+## Versioning:
+
+Docker service images for the `smap_l2_gridder` adhere to [semantic
+version](https://semver.org/) numbers: major.minor.patch.
+
+* Major increments: These are non-backwards compatible API changes.
+* Minor increments: These are backwards compatible API changes.
+* Patch increments: These updates do not affect the API to the service.
+
+## CI/CD:
+
+The CI/CD for SMAP-L2-Gridding-Service is run on github actions with the workflows in the
+`.github/workflows` directory:
+
+* [TODO: complete this section when the above statement is true]
+
+## Releasing
+
+* [TODO: complete when implemented]

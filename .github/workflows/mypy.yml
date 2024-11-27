@@ -13,7 +13,7 @@ jobs:
         python-version: ['3.12']
 
     steps:
-    - name: Check out smap-l2-gridder code
+    - name: Check out harmony-SMAP-L2-gridding-service code
       uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
@@ -25,7 +25,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install mypy
-        pip install -r pip_requirements.txt -r pip_dev_requirements.txt
+        pip install -r pip_requirements.txt -r tests/pip_test_requirements.txt
 
     - name: Run mypy
       run: mypy .

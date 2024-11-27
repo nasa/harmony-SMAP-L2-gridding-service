@@ -4,15 +4,28 @@ L2G data represents a gridded swath in an EASE projected grid.  These are the
 routines to translate the 1D intput arrays into the EASE grid output format
 """
 
-from typing import Iterable
+from collections.abc import Iterable
+from logging import Logger
+from pathlib import Path
 
 import numpy as np
-from xarray import DataArray, DataTree
+from xarray import DataArray, DataTree, open_datatree
 
-from .crs import compute_dims, create_crs, epsg_6931_wkt, epsg_6933_wkt, parse_gpd_file
+from .crs import EPSG_6931_WKT, EPSG_6933_WKT, compute_dims, create_crs, parse_gpd_file
 
 
-def process_input(in_data: DataTree, output_file: str):
+def transform_l2g_input(
+    input_filename: Path, output_filename: Path, logger: Logger
+) -> None:
+    """Entrypoint for L2G-Gridding-Service.
+
+    Opens input and processes the data to a new output file.
+    """
+    with open_datatree(input_filename, decode_times=False) as in_data:
+        process_input(in_data, output_filename, logger=logger)
+
+
+def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
 
@@ -22,7 +35,6 @@ def process_input(in_data: DataTree, output_file: str):
     data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
 
     for node_name in data_node_names:
-
         grid_info = get_grid_information(in_data, node_name)
         vars_to_grid = get_target_variables(in_data, node_name)
 
@@ -45,7 +57,7 @@ def process_input(in_data: DataTree, output_file: str):
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
-    grid_data.attrs = {**var.attrs, 'grid_mapping': "crs"}
+    grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
@@ -62,13 +74,13 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     grid = np.full(
         (grid_info['target']['Grid Height'], grid_info['target']['Grid Width']),
         fill_val,
-        dtype=var.encoding['dtype'],
+        dtype=(var.encoding.get('dtype', var.dtype)),
     )
     try:
         valid_mask = ~np.isnan(var.data)
     except TypeError:
         # tb_time_utc is type string
-        valid_mask = var.data != ""
+        valid_mask = var.data != ''
     valid_rows = grid_info['src']['rows'].data[valid_mask]
     valid_cols = grid_info['src']['cols'].data[valid_mask]
     valid_values = var.data[valid_mask]
@@ -93,7 +105,7 @@ def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating |
     if fill_value is None:
         fill_value = var.attrs.get('missing_value')
     if fill_value is None:
-        fill_value = default_fill_value(var.encoding.get('dtype'))
+        fill_value = default_fill_value(var.encoding.get('dtype', var.dtype))
     return fill_value
 
 
@@ -110,11 +122,12 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     """
     if not np.issubdtype(data_type, np.number):
         return None
-    elif np.issubdtype(data_type, np.floating):
+
+    if np.issubdtype(data_type, np.floating):
         return np.dtype(data_type).type(-9999.0)
-    else:
-        # np.issubdtype(data_type, np.integer):
-        return np.dtype(data_type).type(np.iinfo(data_type).max)
+
+    # np.issubdtype(data_type, np.integer):
+    return np.dtype(data_type).type(np.iinfo(data_type).max)
 
 
 def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
@@ -150,16 +163,13 @@ def get_grid_information(in_data: DataTree, node: str) -> dict:
 
 
 def get_target_grid_information(node: str) -> dict:
-    """Return the target grid informaton.
-
-    TODO [MHS, 11/13/2024] This might be in the wrong file.
-    """
+    """Return the target grid informaton."""
     if is_polar_node(node):
         gpd_name = 'EASE2_N09km.gpd'
-        wkt = epsg_6931_wkt
+        wkt = EPSG_6931_WKT
     else:
         gpd_name = 'EASE2_M09km.gpd'
-        wkt = epsg_6933_wkt
+        wkt = EPSG_6933_WKT
 
     target_grid_info = parse_gpd_file(gpd_name)
     target_grid_info['wkt'] = wkt
