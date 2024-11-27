@@ -48,6 +48,40 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 * `tests` -  Contains the pytest test suite.
 
 
+## Local development
+
+Local testing of service functionality can be achieved via a local instance of
+[Harmony](https://github.com/nasa/harmony) aka Harmony-In-A-Box. Please see instructions there
+regarding creation of a local Harmony instance.
+
+For local development and testing of library modifications or small functions independent of the main Harmony application:
+
+1. Create a Python virtual environment
+1. Install the dependencies in `pip_requirements.txt`, and `tests/pip_test_requirements.txt`
+1. Install the pre-commit hooks ([described below](#pre-commit-hooks)).
+
+
+## Tests
+
+This service utilises the Python `pytest` package to perform unit tests on
+classes and functions in the service. After local development is complete, and
+test have been updated, they can be run in Docker via:
+
+```bash
+$ ./bin/build-image
+$ ./bin/build-test
+$ ./bin/run-test
+```
+
+It is also possible to run the test scripts directly (without docker) by just running the `run_tests.sh` script with a proper python environment. Do note that the `reports` directory will appear in the directory you call the script from.
+
+The `tests/run_tests.sh` script will also generate a coverage report, rendered
+in HTML, and scan the code with `pylint`.
+
+Currently, the `pytest` suite is run automatically within a GitHub workflow
+as part of a CI/CD pipeline. These tests are run for all changes made in a PR
+against the `main` branch. The tests must pass in order to merge the PR.
+
 ## `pre-commit` hooks
 
 This repository uses [pre-commit](https://pre-commit.com/) to enable pre-commit
@@ -69,3 +103,23 @@ pip install pre-commit
 # Install the git hook scripts:
 pre-commit install
 ```
+
+## Versioning:
+
+Docker service images for the `smap_l2_gridder` adhere to [semantic
+version](https://semver.org/) numbers: major.minor.patch.
+
+* Major increments: These are non-backwards compatible API changes.
+* Minor increments: These are backwards compatible API changes.
+* Patch increments: These updates do not affect the API to the service.
+
+## CI/CD:
+
+The CI/CD for SMAP-L2-Gridding-Service is run on github actions with the workflows in the
+`.github/workflows` directory:
+
+* [TODO: complete this section when the above statement is true]
+
+## Releasing
+
+* [TODO: complete when implemented]
