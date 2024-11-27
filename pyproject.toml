@@ -1,3 +1,6 @@
+[tool.ruff.format]
+quote-style = "single"
+
 
 [[tool.mypy.overrides]]
 module = "harmony_service_lib.*"
