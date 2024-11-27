@@ -22,9 +22,9 @@ def sample_datatree_file(tmp_path) -> str:
     """
     dt = DataTree()
     dt['Metadata/Lineage/DEMSLP'] = DataTree()
-    dt['Metadata/Lineage/DEMSLP'].attrs[
-        'Description'
-    ] = 'Representative surface slope data for each of the 9 km cells'
+    dt['Metadata/Lineage/DEMSLP'].attrs['Description'] = (
+        'Representative surface slope data for each of the 9 km cells'
+    )
 
     nodes = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
     for node in nodes:
