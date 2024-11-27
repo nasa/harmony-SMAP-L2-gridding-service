@@ -1,0 +1,34 @@
+# This workflow will run the appropriate library tests across a python matrix of versions.
+name: Run Python library tests
+
+on:
+  workflow_call
+
+jobs:
+  build_and_test_lib:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout smap-l2-gridder repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -r pip_requirements.txt -r tests/pip_test_requirements.txt
+
+      - name: Run science tests while excluding the service tests.
+        run: |
+          pytest tests --ignore tests/test_service
