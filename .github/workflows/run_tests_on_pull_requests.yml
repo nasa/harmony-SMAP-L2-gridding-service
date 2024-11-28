@@ -11,5 +11,11 @@ on:
   workflow_dispatch:
 
 jobs:
+  build_and_test_service:
+    uses: ./.github/workflows/run_service_tests.yml
+
+  run_lib_tests:
+    uses: ./.github/workflows/run_lib_tests.yml
+
   mypy:
     uses: ./.github/workflows/mypy.yml
