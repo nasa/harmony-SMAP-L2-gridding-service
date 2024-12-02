@@ -38,84 +38,13 @@ class Geotransform:
         return x, y
 
 
-# The authoritative value of well known text strings is from epsg.org
-
-# The pyproj CRS created from this WKT string is the same as a CRS that has been
-# round tripped through the CRS creation process. But the output value on the
-# files CRS metadata may not match the authoritative value because of the
-# different varieties of WKT. That said, the CRS created by pyproj is the same.
-# i.e.
-# pyproj.crs.CRS.from_wkt(EPSG_6933_WKT).to_wkt() != EPSG_6933_WKT
-# but
-# pyproj.crs.CRS.from_wkt(pyproj.crs.CRS.from_wkt(EPSG_6933_WKT).to_wkt())
-#   == pyproj.crs.CRS.from_wkt(EPSG_6933_WKT)
-
 # NSIDC EASE-Grid 2.0 Global CRS definition
 # from: https://epsg.org/crs/wkt/id/6933
-EPSG_6933_WKT = (
-    'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 Global",'
-    'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
-    'MEMBER["World Geodetic System 1984 (Transit)", ID["EPSG",1166]], '
-    'MEMBER["World Geodetic System 1984 (G730)", ID["EPSG",1152]], '
-    'MEMBER["World Geodetic System 1984 (G873)", ID["EPSG",1153]], '
-    'MEMBER["World Geodetic System 1984 (G1150)", ID["EPSG",1154]], '
-    'MEMBER["World Geodetic System 1984 (G1674)", ID["EPSG",1155]], '
-    'MEMBER["World Geodetic System 1984 (G1762)", ID["EPSG",1156]], '
-    'MEMBER["World Geodetic System 1984 (G2139)", ID["EPSG",1309]], '
-    'MEMBER["World Geodetic System 1984 (G2296)", ID["EPSG",1383]], '
-    'ELLIPSOID["WGS 84",6378137,298.257223563,'
-    'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",7030]], '
-    'ENSEMBLEACCURACY[2],ID["EPSG",6326]],ID["EPSG",4326]],'
-    'CONVERSION["US NSIDC EASE-Grid 2.0 Global",'
-    'METHOD["Lambert Cylindrical Equal Area",ID["EPSG",9835]],'
-    'PARAMETER["Latitude of 1st standard parallel",30,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]],'
-    'ID["EPSG",8823]],PARAMETER["Longitude of natural origin",0,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]],'
-    'ID["EPSG",8802]],PARAMETER["False easting",0,'
-    'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",8806]],'
-    'PARAMETER["False northing",0,LENGTHUNIT["metre",1,ID["EPSG",9001]],'
-    'ID["EPSG",8807]],ID["EPSG",6928]],CS[Cartesian,2,ID["EPSG",4499]],'
-    'AXIS["Easting (X)",east],AXIS["Northing (Y)",north],'
-    'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",6933]]'
-)
+EPSG_6933_WKT = CRS.from_epsg(6933).to_wkt()
 
 # NSIDC EASE-Grid 2.0 North CRS definition
 # from: https://epsg.org/crs/wkt/id/6931
-EPSG_6931_WKT = (
-    'PROJCRS["WGS 84 / NSIDC EASE-Grid 2.0 North",'
-    'BASEGEOGCRS["WGS 84",ENSEMBLE["World Geodetic System 1984 ensemble", '
-    'MEMBER["World Geodetic System 1984 (Transit)", ID["EPSG",1166]], '
-    'MEMBER["World Geodetic System 1984 (G730)", ID["EPSG",1152]], '
-    'MEMBER["World Geodetic System 1984 (G873)", ID["EPSG",1153]], '
-    'MEMBER["World Geodetic System 1984 (G1150)", ID["EPSG",1154]], '
-    'MEMBER["World Geodetic System 1984 (G1674)", ID["EPSG",1155]], '
-    'MEMBER["World Geodetic System 1984 (G1762)", ID["EPSG",1156]], '
-    'MEMBER["World Geodetic System 1984 (G2139)", ID["EPSG",1309]], '
-    'MEMBER["World Geodetic System 1984 (G2296)", ID["EPSG",1383]], '
-    'ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1,'
-    'ID["EPSG",9001]],ID["EPSG",7030]], ENSEMBLEACCURACY[2],'
-    'ID["EPSG",6326]],ID["EPSG",4326]],'
-    'CONVERSION["US NSIDC EASE-Grid 2.0 North",'
-    'METHOD["Lambert Azimuthal Equal Area",'
-    'ID["EPSG",9820]],PARAMETER["Latitude of natural origin",90,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]],ID["EPSG",8801]],'
-    'PARAMETER["Longitude of natural origin",0,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]],ID["EPSG",8802]],'
-    'PARAMETER["False easting",0,LENGTHUNIT["metre",1,ID["EPSG",9001]],'
-    'ID["EPSG",8806]],PARAMETER["False northing",0,LENGTHUNIT["metre",1,'
-    'ID["EPSG",9001]],ID["EPSG",8807]],ID["EPSG",6929]],CS[Cartesian,2,'
-    'ID["EPSG",4469]],AXIS["Easting (X)",South,MERIDIAN[90.0,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]]]],'
-    'AXIS["Northing (Y)",South,MERIDIAN[180.0,'
-    'ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9102]]]],'
-    'LENGTHUNIT["metre",1,ID["EPSG",9001]],ID["EPSG",6931]]'
-)
-
-GPD_TO_WKT = {
-    'EASE2_N09km.gpd': EPSG_6931_WKT,
-    'EASE2_M09km.gpd': EPSG_6933_WKT,
-}
+EPSG_6931_WKT = CRS.from_epsg(6931).to_wkt()
 
 
 def geotransform_from_target_info(target_info: dict) -> Geotransform:

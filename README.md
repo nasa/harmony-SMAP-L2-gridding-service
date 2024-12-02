@@ -104,7 +104,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-## Versioning:
+## Versioning
 
 Docker service images for the `smap_l2_gridder` adhere to [semantic
 version](https://semver.org/) numbers: major.minor.patch.
@@ -113,13 +113,54 @@ version](https://semver.org/) numbers: major.minor.patch.
 * Minor increments: These are backwards compatible API changes.
 * Patch increments: These updates do not affect the API to the service.
 
-## CI/CD:
+## CI/CD
 
 The CI/CD for SMAP-L2-Gridding-Service is run on github actions with the workflows in the
 `.github/workflows` directory:
 
-* [TODO: complete this section when the above statement is true]
+* `run_lib_tests.yml` - A reusable workflow that tests the library functions
+  against the supported python versions.
+* `run_service_tests.yml` - A reusable workflow that builds the service and
+  test Docker images, then runs the Python unit test suite in an instance of
+  the test Docker container.
+* `run_tests_on_pull_requests.yml` - Triggered for all PRs against the `main`
+  branch. It runs the workflow in `run_service_tests.yml` and
+  `run_lib_tests.yml` to ensure all tests pass for the new code.
+* `publish_docker_image.yml` - Triggered either manually or for commits to the
+  `main` branch that contain changes to the `docker/service_version.txt` file.
+* `publish_release.yml`<a name="release-workflow"></a> - workflow runs
+   automatically when there is a change to the `docker/service_version.txt`
+   file on the main branch.  This workflow will:
+    * Run the full unit test suite, to prevent publication of broken code.
+    * Extract the semantic version number from `docker/service_version.txt`.
+    * Extract the released notes for the most recent version from `CHANGELOG.md`.
+    * Build and deploy a this service's docker image to `ghcr.io`.
+    * Publish a GitHub release under the semantic version number, with associated
+      git tag.
+
 
 ## Releasing
 
-* [TODO: complete when implemented]
+A release consists of a new Docker image for the harmony-SMAP-L2-gridding-service
+published to github's container repository.
+
+A release is made automatically when a commit to the main branch contains a
+changes in the `docker/service_version.txt` file, see the [publish_release](#release-workflow) workflow in the CI/CD section above.
+
+Before **merging** a PR that will trigger a release, ensure these two files are updated:
+
+* `CHANGELOG.md` - Notes should be added to capture the changes to the service and a link to the current pull request should be included.
+* `docker/service_version.txt` - The semantic version number should be updated to trigger the release.
+
+The `CHANGELOG.md` file requires a specific format for a new release, as it
+looks for the following string to define the newest release of the code
+(starting at the top of the file).
+
+```
+## [vX.Y.Z] - YYYY-MM-DD
+```
+
+Where the markdown reference needs to be updated at the bottom of the file following the existing pattern.
+```
+[vX.Y.Z]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/X.Y.Z
+```
