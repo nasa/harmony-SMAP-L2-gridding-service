@@ -13,7 +13,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
 
     steps:
-      - name: Checkout smap-l2-gridder repository
+      - name: Checkout harmony-smap-l2-gridding-service repository
         uses: actions/checkout@v4
         with:
           lfs: true
