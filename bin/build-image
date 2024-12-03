@@ -1,11 +1,11 @@
 #!/bin/bash
 ###############################################################################
 #
-# Build a Docker image of the Harmony-SMAP-L2-Gridder service.
+# Build a Docker image of the HARMONY SMAP L2 Gridding Service
 #
 ###############################################################################
 
-image="ghcr.io/nasa/harmony-smap-l2-gridder"
+image="ghcr.io/nasa/harmony-smap-l2-gridding-service"
 
 # Retrieve the tag from the script arguments, or default to "latest". Bamboo
 # will pass the contents of `docker/service_version.txt` as this argument,
@@ -14,8 +14,8 @@ image="ghcr.io/nasa/harmony-smap-l2-gridder"
 tag=${1:-latest}
 
 
-# Remove old versions of: ghcr.io/nasa/harmony-smap-l2-gridder and
-# ghcr.io/nasa/harmony-smap-l2-gridder-test images
+# Remove old versions of: ghcr.io/nasa/harmony-smap-l2-gridding-service and
+# ghcr.io/nasa/harmony-smap-l2-gridding-service-test images
 ./bin/clean-images
 
 # Build the image

@@ -1,4 +1,4 @@
-# This workflow will build the service and test Docker images for smap-l2-gridder,
+# This workflow will build the service and test Docker images for harmony-smap-l2-gridding-service,
 # then run the `pytest` suite within a test Docker container, reporting
 # test results and code coverage as artefacts. It will be called by the
 # workflow that run tests against new PRs and as a first step in the workflow
@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout smap-l2-gridder repository
+      - name: Checkout harmony-smap-l2-gridding-service repository
         uses: actions/checkout@v4
         with:
           lfs: true

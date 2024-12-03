@@ -1,4 +1,4 @@
-"""Run the Harmony-SMAP-L2-Gridder via the Harmony CLI."""
+"""Run the Harmony-SMAP-L2-Gridding-Service via the Harmony CLI."""
 
 from argparse import ArgumentParser
 from sys import argv

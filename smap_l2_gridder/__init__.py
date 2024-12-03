@@ -1,1 +1,1 @@
-"""Initialize the Harmony-SMAP-L2-Gridder package."""
+"""Initialize the Harmony SMAP L2 Gridding Service package."""
