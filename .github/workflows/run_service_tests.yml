@@ -1,8 +1,9 @@
-# This workflow will build the service and test Docker images for harmony-smap-l2-gridding-service,
-# then run the `pytest` suite within a test Docker container, reporting
-# test results and code coverage as artefacts. It will be called by the
-# workflow that run tests against new PRs and as a first step in the workflow
-# that publishes new Docker images.
+# This workflow will:
+# Build the service and test Docker images for Harmony SMAP L2 gridding service.
+# Run the `pytest` suite within a test Docker container.
+# Report test results and code coverage as artefacts.
+# It is called by the workflow that runs tests against new PRs and as a
+# first step in the workflow that publishes new Docker images.
 
 name: Run Python Service Tests
 
@@ -16,7 +17,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout harmony-smap-l2-gridding-service repository
+      - name: Checkout Harmony-SMAP-L2-gridding-service repository
         uses: actions/checkout@v4
         with:
           lfs: true

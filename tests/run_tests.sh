@@ -1,8 +1,7 @@
 #!/bin/sh
 ###############################################################################
-#
 # A script invoked by the test Dockerfile to run the Python `unittest` suite
-# for the SMAP-L2-Gridding-Service. The script first runs the test suite,
+# for the Harmony SMAP L2 Gridding Service. The script first runs the test suite,
 # then it checks for linting errors.
 ###############################################################################
 

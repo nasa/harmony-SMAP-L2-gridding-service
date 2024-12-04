@@ -1,4 +1,4 @@
-"""`HarmonyAdapter` for SMAP-L2-Gridding-Service.
+"""`HarmonyAdapter` for Harmony SMAP L2 gridding service.
 
 The class in this file is the top level of abstraction for a service that will
 accept an input L2G input granule and transform it into a fully gridded

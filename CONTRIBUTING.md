@@ -1,4 +1,4 @@
-# Contributing to SMAP-L2-Gridding-Service
+# Contributing to Harmony-SMAP-L2-Gridding-Service
 
 Thanks for contributing!
 
@@ -38,7 +38,7 @@ of the code.
 
 ## Disclaimer
 
-SMAP-L2-Gridding-Service maintainers will review all pull requests submitted. Only requests that
+Harmony-SMAP-L2-Gridding-Service maintainers will review all pull requests submitted. Only requests that
 meet the standard of quality set forth by existing code, following the patterns
 set forth by existing code, and adhering to existing design patterns will be
 considered and/or accepted.

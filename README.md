@@ -1,6 +1,6 @@
-# SMAP L2 Gridding Service
+# Harmony SMAP L2 Gridding Service
 
-This repository contains the code for the SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
+This repository contains the code for the Harmony-SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
 
 This code currently works on `SPL2SMP_E` data and will be adapted for other SMAP collections of gridded trajectory data.
 
@@ -35,7 +35,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 └── 📁 tests
 ```
 
-* `CHANGELOG.md` -   Contains a record of changes applied to each new release of the SMAP-L2-Gridding-Service.
+* `CHANGELOG.md` -   Contains a record of changes applied to each new release of the Harmony-SMAP-L2-Gridding-Service.
 * `CONTRIBUTING.md` -  Instructions on how to contribute to the repository.
 * `LICENSE` - Required for distribution under NASA open-source approval. Details conditions for use, reproduction and distribution.
 * `README.md` - This file, containing guidance on developing the library and service.
@@ -106,7 +106,7 @@ pre-commit install
 
 ## Versioning
 
-Docker service images for the `smap_l2_gridder` adhere to [semantic
+Docker service images for the `harmony-smap-l2-gridder` adhere to [semantic
 version](https://semver.org/) numbers: major.minor.patch.
 
 * Major increments: These are non-backwards compatible API changes.
@@ -115,8 +115,8 @@ version](https://semver.org/) numbers: major.minor.patch.
 
 ## CI/CD
 
-The CI/CD for SMAP-L2-Gridding-Service is run on github actions with the workflows in the
-`.github/workflows` directory:
+The CI/CD for Harmony-SMAP-L2-Gridding-Service is run on github actions with
+the workflows in the `.github/workflows` directory:
 
 * `run_lib_tests.yml` - A reusable workflow that tests the library functions
   against the supported python versions.
@@ -141,7 +141,7 @@ The CI/CD for SMAP-L2-Gridding-Service is run on github actions with the workflo
 
 ## Releasing
 
-A release consists of a new Docker image for the harmony-SMAP-L2-gridding-service
+A release consists of a new Docker image for the Harmony SMAP L2 gridding service
 published to github's container repository.
 
 A release is made automatically when a commit to the main branch contains a

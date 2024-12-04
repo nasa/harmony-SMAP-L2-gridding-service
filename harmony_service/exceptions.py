@@ -1,8 +1,8 @@
-"""Define harmony service errors raised by SMAP-L2-Gridding-Service."""
+"""Define harmony service errors raised by Harmony SMAP L2 gridding service."""
 
 from harmony_service_lib.util import HarmonyException
 
-SERVICE_NAME = 'harmony-smap-l2-gridding-service'
+SERVICE_NAME = 'harmony-smap-l2-gridder'
 
 
 class SMAPL2GridderServiceError(HarmonyException):

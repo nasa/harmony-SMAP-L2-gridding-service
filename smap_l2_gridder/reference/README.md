@@ -1,6 +1,6 @@
-# Reference files for smap l2 gridder
+# Reference files for Harmony SMAP L2 gridding service
 
-These are copies of the gpd files describing the EASE2 grids copied directly from the [maxmaps NSIDC repository](https://github.com/nsidc/mapxmaps).
+These are copies of the gpd files describing the EASE2 grids copied directly from the [mapxmaps NSIDC repository](https://github.com/nsidc/mapxmaps).
 
 These files are stable and do not change regularly (over 13 years for M09 and
 N09). Rather than use a gitsubmodule, I have chosen to copy the files to

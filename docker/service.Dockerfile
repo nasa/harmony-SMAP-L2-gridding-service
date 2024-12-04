@@ -1,12 +1,13 @@
 ###############################################################################
 #
-# Service image for ghcr.io/nasa/harmony-smap-l2-gridding-service
+# Service image for Harmony SMAP L2 gridding service
+#  ghcr.io/nasa/harmony-smap-l2-gridder
 #
-# Harmony-SMAP-L2-Gridding-Service backend that transforms L2G (gridded
-# trajectory) data into actual gridded data.
+# Transforms L2G (gridded trajectory) data into actual gridded data.
 #
-# This image installs dependencies via Pip. The service code is then copied
-# into the Docker image.
+# This image:
+# Installs dependencies via pip.
+# Copies the service code into the Docker image.
 #
 ###############################################################################
 FROM python:3.12-slim-bookworm

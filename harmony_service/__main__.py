@@ -1,4 +1,4 @@
-"""Run the Harmony-SMAP-L2-Gridding-Service via the Harmony CLI."""
+"""Run the Harmony SMAP L2 gridding service via the Harmony CLI."""
 
 from argparse import ArgumentParser
 from sys import argv
@@ -11,7 +11,9 @@ from harmony_service.exceptions import SERVICE_NAME
 
 def main(arguments: list[str]):
     """Parse command line arguments and invoke the appropriate method."""
-    parser = ArgumentParser(prog=SERVICE_NAME, description='Run SMAP L2 Gridder.')
+    parser = ArgumentParser(
+        prog=SERVICE_NAME, description='Run Harmony SMAP L2 Gridder.'
+    )
 
     setup_cli(parser)
     harmony_arguments, _ = parser.parse_known_args(arguments[1:])
