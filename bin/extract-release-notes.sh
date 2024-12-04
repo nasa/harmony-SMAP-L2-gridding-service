@@ -1,10 +1,9 @@
 #!/bin/bash
-###############################################################################
+##################################################################################
 #
-# A bash script to extract only the notes related to the most recent version of
-# SMAP L2 Gridding Service from CHANGELOG.md
+# Extract release notes for the latest version of Harmony SMAP L2 gridding service
 #
-###############################################################################
+##################################################################################
 
 CHANGELOG_FILE="CHANGELOG.md"
 

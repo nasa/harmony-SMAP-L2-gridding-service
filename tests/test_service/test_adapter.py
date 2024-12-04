@@ -1,4 +1,4 @@
-"""End-to-end tests of the SMAP-L2-Gridding-Service."""
+"""End-to-end tests of the Harmony SMAP L2 gridding service."""
 
 import pytest
 from harmony_service_lib.message import Message as HarmonyMessage

@@ -1,11 +1,9 @@
 #!/bin/bash
-###############################################################################
+################################################################################
 #
-# remove all images containing the string
-# "ghcr.io/nasa/harmony-smap-l2-gridding-service" and remove them.
-# This is used for clean-up after development.
+# Remove all images containing the string "ghcr.io/nasa/harmony-smap-l2-gridder"
 #
-###############################################################################
+################################################################################
 remove_image_by_name() {
     echo "Removing images for: $1"
     matching_images=$(docker images --filter reference="$1" --format="{{.ID}}")
@@ -15,7 +13,7 @@ remove_image_by_name() {
     fi
 }
 
-image_base_name="ghcr.io/nasa/harmony-smap-l2-gridding-service"
+image_base_name="ghcr.io/nasa/harmony-smap-l2-gridder"
 
 # First remove test images:
 remove_image_by_name "${image_base_name}-test"

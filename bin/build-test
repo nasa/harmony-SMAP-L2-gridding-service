@@ -1,15 +1,15 @@
 #!/bin/bash
 ###############################################################################
 #
-# Build a Docker container to run the test suite for the SMAP-L2-Gridding-Service
+# Build a Docker container test the Harmony-SMAP-L2-Gridding-Service
 #
-# To build the ghcr.io/nasa/harmony-smap-l2-gridding-service-test image, the
-# ghcr.io/nasa/harmony-smap-l2-gridding-service image must also be present
+# To build the ghcr.io/nasa/harmony-smap-l2-gridder-test image, the
+# ghcr.io/nasa/harmony-smap-l2-gridder image must also be present
 # locally, as it is used as the base image in `docker/tests.Dockerfile`.
 #
 ###############################################################################
 
-image="ghcr.io/nasa/harmony-smap-l2-gridding-service-test"
+image="ghcr.io/nasa/harmony-smap-l2-gridder-test"
 tag=${1:-latest}
 
 

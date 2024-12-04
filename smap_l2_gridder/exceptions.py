@@ -5,7 +5,7 @@ class SMAPL2GridderError(Exception):
     """Base error class for exceptions raised by smap_l2_gridder library."""
 
     def __init__(self, message=None):
-        """All Harmony-SMAP-L2-Gridding-Service errors have a message field."""
+        """All Harmony SMAP L2 gridding service errors have a message field."""
         self.message = message
 
 
