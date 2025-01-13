@@ -107,9 +107,9 @@ def test_create_crs():
     """Test create crs transforms input info into array with metadata."""
     crs_data_array = create_crs(sample_target_info)
     assert 'crs_wkt' in crs_data_array.attrs
-    assert (
-        'NSIDC EASE-Grid 2.0 Global' in crs_data_array.crs_wkt
-    ), f'expected "NSIDC EASE-Grid 2.0 Global" in {crs_data_array.crs_wkt}'
+    assert 'NSIDC EASE-Grid 2.0 Global' in crs_data_array.crs_wkt, (
+        f'expected "NSIDC EASE-Grid 2.0 Global" in {crs_data_array.crs_wkt}'
+    )
     assert crs_data_array.attrs['proj'] == (
         '+proj=cea +lat_ts=30 +lon_0=0 +x_0=0 '
         '+y_0=0 +datum=WGS84 +units=m +no_defs +type=crs'
