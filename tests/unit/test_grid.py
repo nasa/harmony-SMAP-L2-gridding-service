@@ -1,17 +1,22 @@
 """Tests for grid module."""
 
 from pathlib import Path
+from unittest.mock import call
 
 import numpy as np
 import pytest
 import xarray as xr
 from xarray import DataArray, DataTree
 
+from smap_l2_gridder import grid
 from smap_l2_gridder.grid import (
+    InvalidCollectionError,
     default_fill_value,
+    get_dataset_shortname,
     get_grid_information,
     get_target_grid_information,
     grid_variable,
+    locate_row_and_column_in_node,
     prepare_variable,
     process_input,
     transfer_metadata,
@@ -112,29 +117,104 @@ def test_prepare_variable_encoding_of_utc_time(sample_datatree, sample_grid_info
     assert result.attrs['grid_mapping'] == 'crs'
 
 
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMP_E_file'], indirect=True)
 def test_get_grid_information(sample_datatree, mocker):
-    """Verify correct information is returned as grid_info."""
+    """Verify correct information is returned as grid_info for SPL2SMP_E data."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
-    node = 'Soil_Moisture_Retrieval_Data_Polar'
 
-    actual_grid_info = get_grid_information(sample_datatree, node)
+    for node in ['Soil_Moisture_Retrieval_Data_Polar', 'Soil_Moisture_Retrieval_Data']:
+        short_name = 'SPL2SMP_E'
+        actual_grid_info = get_grid_information(sample_datatree, node, short_name)
+        np.testing.assert_array_almost_equal(
+            actual_grid_info['src']['rows'], sample_datatree[f'{node}/EASE_row_index']
+        )
+        np.testing.assert_array_almost_equal(
+            actual_grid_info['src']['cols'],
+            sample_datatree[f'{node}/EASE_column_index'],
+        )
+        target_grid_info.assert_called_with(node, short_name)
+
+
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+@pytest.mark.parametrize(
+    'node,suffix',
+    [
+        ('Soil_Moisture_Retrieval_Data_3km', '_3km'),
+        ('Soil_Moisture_Retrieval_Data', ''),
+    ],
+)
+def test_get_grid_information_spl2smap(sample_datatree, node, suffix, mocker):
+    """Verify correct information is returned as grid_info for SPL2SMAP data."""
+    target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
+
+    expected_short_name = 'SPL2SMAP'
+    short_name = get_dataset_shortname(sample_datatree)
+
+    actual_grid_info = get_grid_information(sample_datatree, node, short_name)
+
     np.testing.assert_array_almost_equal(
-        actual_grid_info['src']['rows'], sample_datatree[f'{node}/EASE_row_index']
+        actual_grid_info['src']['rows'],
+        sample_datatree[f'{node}/EASE_row_index{suffix}'],
     )
     np.testing.assert_array_almost_equal(
-        actual_grid_info['src']['cols'], sample_datatree[f'{node}/EASE_column_index']
+        actual_grid_info['src']['cols'],
+        sample_datatree[f'{node}/EASE_column_index{suffix}'],
     )
-    target_grid_info.assert_called_with(f'{node}')
+    target_grid_info.assert_called_with(node, expected_short_name)
+
+
+def test_locate_row_and_column_in_node_SPL2SMP_E(mocker):
+    """Tests SPL2SMP_E collection."""
+    locator_patch = mocker.patch('smap_l2_gridder.grid.spl2smap_index_locator')
+    mock_dt = mocker.Mock()
+    mock_dt.__getitem__ = mocker.Mock()
+
+    row, col = locate_row_and_column_in_node(mock_dt, 'node', 'SPL2SMP_E')
+    mock_dt.__getitem__.assert_has_calls(
+        [call('node/EASE_row_index'), call('node/EASE_column_index')]
+    )
+    locator_patch.assert_not_called
+
+
+def test_locate_row_and_column_in_node_SPL2SMAP(mocker):
+    """Tests SPL2SMAP collection."""
+    locator_spy = mocker.spy(grid, 'spl2smap_index_locator')
+    mock_dt = mocker.Mock()
+    mock_dt.__getitem__ = mocker.Mock()
+    node = 'nodename_3km'
+
+    row, col = locate_row_and_column_in_node(mock_dt, node, 'SPL2SMAP')
+    mock_dt.__getitem__.assert_has_calls(
+        [call(f'{node}/EASE_row_index_3km'), call(f'{node}/EASE_column_index_3km')]
+    )
+    locator_spy.assert_has_calls(
+        [call(node, 'EASE_row_index'), call(node, 'EASE_column_index')]
+    )
+
+
+def test_locate_row_and_column_in_node_bad_short_name(mocker):
+    """Check that unimplemented collection raises exception."""
+    locator_patch = mocker.patch('smap_l2_gridder.grid.spl2smap_index_locator')
+    mock_dt = mocker.Mock()
+    getitem_mock = mocker.Mock()
+    mock_dt.__getitem__ = getitem_mock
+
+    short_name = 'MADEUP_SHORTNAME'
+    with pytest.raises(InvalidCollectionError, match=f'.*{short_name}.*'):
+        locate_row_and_column_in_node(None, 'node_name', short_name)
+
+    locator_patch.assert_not_called
+    getitem_mock.assert_not_called
 
 
 def test_get_target_grid_information(mocker):
-    """Test that the node name correctly identifies the gpd file to parse."""
+    """Test that the node name correctly identifies which gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information('any-node-name')
+    get_target_grid_information('any-node-name', 'SPL2SMP_E')
     parse_gpd_file_mock.assert_called_with('EASE2_M09km.gpd')
 
-    get_target_grid_information('any-node-name_Polar')
+    get_target_grid_information('any-node-name_Polar', 'SPL2SMP_E')
     parse_gpd_file_mock.assert_called_with('EASE2_N09km.gpd')
 
 

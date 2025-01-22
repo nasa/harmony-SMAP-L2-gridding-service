@@ -9,7 +9,7 @@ from harmony_service.adapter import SMAPL2GridderAdapter
 from smap_l2_gridder.exceptions import InvalidGPDError
 
 
-def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker):
+def test_process_sample_file(tmp_path, sample_SPL2SMP_E_file, sample_stac, mocker):
     """Run a sample file through the adapter."""
     # override the adapter's working dir
     temp_dir_mock = mocker.patch('harmony_service.adapter.TemporaryDirectory')
@@ -17,7 +17,7 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
 
     # use a datatree fixture as the downloaded file
     download_mock = mocker.patch('harmony_service.adapter.download')
-    download_mock.return_value = sample_datatree_file
+    download_mock.return_value = sample_SPL2SMP_E_file
 
     # set the output filename
     filename_mock = mocker.patch('harmony_service.adapter.generate_output_filename')
@@ -123,12 +123,12 @@ def test_process_sample_file(tmp_path, sample_datatree_file, sample_stac, mocker
 
 
 def test_process_sample_file_failure(
-    tmp_path, sample_stac, sample_datatree_file, mocker
+    tmp_path, sample_stac, sample_SPL2SMP_E_file, mocker
 ):
     """Test failure."""
     # use a datatree fixture as the downloaded file
     download_mock = mocker.patch('harmony_service.adapter.download')
-    download_mock.return_value = sample_datatree_file
+    download_mock.return_value = sample_SPL2SMP_E_file
     mocker.patch('harmony_service.adapter.generate_output_filename')
     mocker.patch('harmony_service.adapter.stage')
 

@@ -1,5 +1,7 @@
 """Set up common pytest fixtures."""
 
+# ruff: noqa: E501
+
 from datetime import datetime
 
 import numpy as np
@@ -10,21 +12,23 @@ from xarray import DataArray, DataTree, open_datatree
 
 
 # Fixtures
-@pytest.fixture
-def sample_datatree_file(tmp_path) -> str:
+@pytest.fixture(name='sample_SPL2SMP_E_file')
+def sample_SPL2SMP_E_file(tmp_path) -> str:
     """Create a sample DataTree file for testing.
 
-    A sample DataTree is created
+    A sample DataTree is created with the approximate shape of a SPL2SMP_E file
 
     The test data is repeated for both global and polar nodes.
 
     The tree is written to disk and the filename is returned.
+
     """
     dt = DataTree()
     dt['Metadata/Lineage/DEMSLP'] = DataTree()
     dt['Metadata/Lineage/DEMSLP'].attrs['Description'] = (
         'Representative surface slope data for each of the 9 km cells'
     )
+    dt['Metadata/DatasetIdentification'] = DataArray(attrs={'shortName': 'SPL2SMP_E'})
 
     nodes = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
     for node in nodes:
@@ -93,13 +97,109 @@ def sample_datatree_file(tmp_path) -> str:
     return tmp_file
 
 
-@pytest.fixture
-def sample_datatree(sample_datatree_file) -> DataTree:
-    """A sample datatree fixture is generated, opened and returned.
+@pytest.fixture(name='sample_SPL2SMAP_file')
+def sample_SPL2SMAP_file(tmp_path) -> str:
+    """Create a sample DataTree file for testing.
 
-    This approximates the expected shape of an SPL2SMP_E granule.
+    A sample DataTree is created with the approximate shape of a SPL2SMAP file
+
+    The tree is written to disk and the filename is returned.
+
     """
-    dt2 = open_datatree(sample_datatree_file, decode_times=False)
+    dt = DataTree()
+    dt['Metadata/DatasetIdentification'] = DataArray(attrs={'shortName': 'SPL2SMAP'})
+
+    dt['Soil_Moisture_Retrieval_Data'] = DataTree()
+    dt['Soil_Moisture_Retrieval_Data/EASE_column_index'] = DataArray(
+        data=np.array([1175, 1175, 1175, 1175, 1175], dtype=np.uint16),
+        dims=['phony_dim_0'],
+        attrs={
+            'long_name': 'The column index of the 9 km EASE grid cell that contains the associated data.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data/latitude /Soil_Moisture_Retrieval_Data/longitude',
+            'valid_min': 0,
+            'valid_max': 65535,
+            '_FillValue': np.uint16(65534),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data/EASE_row_index'] = DataArray(
+        data=np.array([1603, 1604, 1605, 1606, 1607], dtype=np.uint16),
+        dims=['phony_dim_0'],
+        attrs={
+            'long_name': 'The row index of the 9 km EASE grid cell that contains the associated data.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data/latitude /Soil_Moisture_Retrieval_Data/longitude',
+            'valid_min': 0,
+            'valid_max': 65535,
+            '_FillValue': np.uint16(65534),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data/albedo'] = DataArray(
+        data=np.array([0.0009434, 0.00136986, 0.0025, 0.0, -9999.0], dtype=np.float32),
+        dims=['phony_dim_0'],
+        attrs={
+            'long_name': 'Diffuse reflecting power of the Earth&apos;s surface within the grid cell.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data/latitude /Soil_Moisture_Retrieval_Data/longitude',
+            'valid_min': 0.0,
+            'valid_max': 1.0,
+            '_FillValue': np.float32(-9999.0),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data_3km'] = DataTree()
+    dt['Soil_Moisture_Retrieval_Data_3km/EASE_column_index_3km'] = DataArray(
+        data=np.array([1175, 1175, 1175, 1175, 1175], dtype=np.uint16),
+        dims=['phony_dim_1'],
+        attrs={
+            'long_name': 'The column index of the 3 km EASE grid cell that contains the associated data.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data_3km/latitude_3km /Soil_Moisture_Retrieval_Data_3km/longitude_3km',
+            'valid_min': 0,
+            'valid_max': 65535,
+            '_FillValue': np.uint16(65534),
+        },
+    )
+    dt['Soil_Moisture_Retrieval_Data_3km/EASE_row_index_3km'] = DataArray(
+        data=np.array([1603, 1604, 1605, 1606, 1607], dtype=np.uint16),
+        dims=['phony_dim_1'],
+        attrs={
+            'long_name': 'The column index of the 3 km EASE grid cell that contains the associated data.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data_3km/latitude_3km /Soil_Moisture_Retrieval_Data_3km/longitude_3km',
+            'valid_min': 0,
+            'valid_max': 65535,
+            '_FillValue': np.uint16(65534),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data_3km/albedo_3km'] = DataArray(
+        data=np.array([0.0009434, 0.00136986, 0.0025, 0.0, -9999.0], dtype=np.float32),
+        dims=['phony_dim_1'],
+        attrs={
+            'long_name': 'Diffuse reflecting power of the Earth&apos;s surface within the 3 km EASE grid cell.',
+            'coordinates': '/Soil_Moisture_Retrieval_Data_3km/latitude_3km /Soil_Moisture_Retrieval_Data_3km/longitude_3km',
+            'valid_min': 0.0,
+            'valid_max': 1.0,
+            '_FillValue': np.float32(-9999.0),
+        },
+    )
+
+    # Round trip this to a file so that the encoding values are what we see
+    # when we read from a NetCDF file.
+    tmp_file = tmp_path / 'tmp_output.nc'
+    dt.to_netcdf(tmp_file)
+    return tmp_file
+
+
+@pytest.fixture
+def sample_datatree(request) -> DataTree:
+    """A specified datatree fixture is generated, opened and returned.
+
+    If no parameter is present on request, use the SPL2SMP_E fixture.
+    """
+    fixture_name = (
+        request.param if hasattr(request, 'param') else 'sample_SPL2SMP_E_file'
+    )
+    datatree_file = request.getfixturevalue(fixture_name)
+    dt2 = open_datatree(datatree_file, decode_times=False)
     return dt2
 
 

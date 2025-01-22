@@ -11,3 +11,7 @@ class SMAPL2GridderError(Exception):
 
 class InvalidGPDError(SMAPL2GridderError):
     """Raised if an invalid GPD is used."""
+
+
+class InvalidCollectionError(SMAPL2GridderError):
+    """Raised when attempting operations on invalid collections."""
