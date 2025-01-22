@@ -19,6 +19,7 @@ from smap_l2_gridder.grid import (
     locate_row_and_column_in_node,
     prepare_variable,
     process_input,
+    spl2smap_index_locator,
     transfer_metadata,
     variable_fill_value,
 )
@@ -133,6 +134,20 @@ def test_get_grid_information(sample_datatree, mocker):
             sample_datatree[f'{node}/EASE_column_index'],
         )
         target_grid_info.assert_called_with(node, short_name)
+
+
+@pytest.mark.parametrize(
+    'node,stem,expected',
+    [
+        ('SPL2SMAP', 'EASE_column_index', 'SPL2SMAP/EASE_column_index'),
+        ('node_3km', 'EASE_column_index', 'node_3km/EASE_column_index_3km'),
+        ('SPL2SMAP', 'EASE_row_index', 'SPL2SMAP/EASE_row_index'),
+        ('SPL2SMAP_3km', 'EASE_row_index', 'SPL2SMAP_3km/EASE_row_index_3km'),
+    ],
+)
+def test_spl2smap_index_locator(node, stem, expected):
+    """Validate index locator for SPL2SMAP."""
+    assert spl2smap_index_locator(node, stem) == expected
 
 
 @pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
