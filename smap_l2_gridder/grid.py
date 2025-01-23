@@ -9,11 +9,11 @@ from logging import Logger
 from pathlib import Path
 
 import numpy as np
+from pyproj import CRS
 from xarray import DataArray, DataTree, open_datatree
 
-from .collections import COLLECTION_INFORMATION
-from .crs import EPSG_6931_WKT, EPSG_6933_WKT, compute_dims, create_crs, parse_gpd_file
-from .exceptions import InvalidCollectionError
+from .collections import get_collection_group_info
+from .crs import compute_dims, create_crs, parse_gpd_file
 
 
 def transform_l2g_input(
@@ -163,17 +163,13 @@ def locate_row_and_column_for_group(
     indices variables within in the input DataTree structure.
 
     """
-    try:
-        row = in_dt[COLLECTION_INFORMATION[short_name]['data_groups'][group]['row']]
-        column = in_dt[COLLECTION_INFORMATION[short_name]['data_groups'][group]['col']]
-
-        return {
-            'rows': row.astype(row.encoding.get('dtype', 'uint16')),
-            'cols': column.astype(column.encoding.get('dtype', 'uint16')),
-        }
-
-    except KeyError as e:
-        raise InvalidCollectionError(f'Invalid collection or group: {e}.')
+    info = get_collection_group_info(short_name, group)
+    row = in_dt[info['row']]
+    column = in_dt[info['col']]
+    return {
+        'rows': row.astype(row.encoding.get('dtype', 'uint16')),
+        'cols': column.astype(column.encoding.get('dtype', 'uint16')),
+    }
 
 
 def get_column_dataarray(in_dt: DataTree, group: str, short_name: str) -> DataArray:
@@ -184,32 +180,14 @@ def get_column_dataarray(in_dt: DataTree, group: str, short_name: str) -> DataAr
 def get_target_grid_information(group: str, short_name: str) -> dict:
     """Return the target grid informaton.
 
-    Using the group name and collection short name return in the correct gpd and
-    epsg information for the target grid.
+    Using the group name and collection short name look up the gpd and epsg
+    code that represent the target grid.
 
     """
-    gpd_name, wkt = get_grid_and_crs(group, short_name)
-
-    target_grid_info = parse_gpd_file(gpd_name)
-    target_grid_info['wkt'] = wkt
+    info = get_collection_group_info(short_name, group)
+    target_grid_info = parse_gpd_file(info['gpd'])
+    target_grid_info['wkt'] = CRS(info['epsg']).to_wkt()
     return target_grid_info
-
-
-def get_grid_and_crs(group, short_name):
-    """Retrieve the grid and crs from collecton and group name."""
-    if is_polar_group(group):
-        gpd_name = 'EASE2_N09km.gpd'
-        wkt = EPSG_6931_WKT
-    else:
-        gpd_name = 'EASE2_M09km.gpd'
-        wkt = EPSG_6933_WKT
-
-    return gpd_name, wkt
-
-
-def is_polar_group(is_polar_group: str) -> bool:
-    """If the group name ends with "_Polar" it's the Northern Hemisphere data."""
-    return is_polar_group.endswith('_Polar')
 
 
 def get_data_groups(in_data: DataTree) -> set[str]:

@@ -38,15 +38,6 @@ class Geotransform:
         return x, y
 
 
-# NSIDC EASE-Grid 2.0 Global CRS definition
-# from: https://epsg.org/crs/wkt/id/6933
-EPSG_6933_WKT = CRS.from_epsg(6933).to_wkt()
-
-# NSIDC EASE-Grid 2.0 North CRS definition
-# from: https://epsg.org/crs/wkt/id/6931
-EPSG_6931_WKT = CRS.from_epsg(6931).to_wkt()
-
-
 def geotransform_from_target_info(target_info: dict) -> Geotransform:
     """Return a geotransform from the grid_info dict.
 

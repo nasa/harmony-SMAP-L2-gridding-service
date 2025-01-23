@@ -208,8 +208,8 @@ def test_locate_row_and_column_for_group_bad_short_name(mocker):
     [
         ('Soil_Moisture_Retrieval_Data', 'SPL2SMP_E', 'EASE2_M09km.gpd'),
         ('Soil_Moisture_Retrieval_Data_Polar', 'SPL2SMP_E', 'EASE2_N09km.gpd'),
-        # ('Soil_Moisture_Retrieval_Data', 'SPL2SMAP', 'EASE2_M09km.gpd')
-        # ('Soil_Moisture_Retrieval_Data_3km', 'SPL2SMAP', 'EASE2_M03km.gpd')
+        ('Soil_Moisture_Retrieval_Data', 'SPL2SMAP', 'EASE2_M09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data_3km', 'SPL2SMAP', 'EASE2_M03km.gpd'),
     ],
 )
 def test_get_target_grid_information(group, short_name, expected, mocker):

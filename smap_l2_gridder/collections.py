@@ -12,6 +12,8 @@ gpd file and epsg code.
 
 """
 
+from .exceptions import InvalidCollectionError
+
 STANDARD_LOCATIONS = {
     'row': 'Soil_Moisture_Retrieval_Data/EASE_row_index',
     'col': 'Soil_Moisture_Retrieval_Data/EASE_column_index',
@@ -69,3 +71,23 @@ COLLECTION_INFORMATION = {
         },
     },
 }
+
+
+def get_collection_group_info(short_name, group) -> dict:
+    """Get basic information for a collection's group.
+
+    Helper function to identify which information was incorrect when attempting
+    to retrieve the desired gridding information
+
+    """
+    try:
+        collection = COLLECTION_INFORMATION[short_name]
+    except KeyError:
+        raise InvalidCollectionError(f'No collection information for {short_name}')
+
+    try:
+        group_info = collection['data_groups'][group]
+    except KeyError:
+        raise InvalidCollectionError(f'No group named {group} in {short_name}')
+
+    return group_info
