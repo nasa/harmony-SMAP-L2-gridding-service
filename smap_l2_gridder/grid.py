@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from xarray import DataArray, DataTree, open_datatree
 
+from .collections import COLLECTION_INFORMATION
 from .crs import EPSG_6931_WKT, EPSG_6933_WKT, compute_dims, create_crs, parse_gpd_file
 from .exceptions import InvalidCollectionError
 
@@ -29,12 +30,13 @@ def transform_l2g_input(
 def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
+
     short_name = get_collection_shortname(in_data)
 
     out_data = transfer_metadata(in_data, out_data)
 
     # Process grids from all top level groups that are not only Metadata
-    data_group_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
+    data_group_names = get_data_groups(in_data)
 
     for group_name in data_group_names:
         grid_info = get_grid_information(in_data, group_name, short_name)
@@ -145,13 +147,8 @@ def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:
     information.
 
     """
-    src_grid_info = {}
-    row, column = locate_row_and_column_for_group(in_dt, group, short_name)
-    src_grid_info['rows'] = row.astype(row.encoding.get('dtype', 'uint16'))
-    src_grid_info['cols'] = column.astype(column.encoding.get('dtype', 'uint16'))
-
     grid_info = {}
-    grid_info['src'] = src_grid_info
+    grid_info['src'] = locate_row_and_column_for_group(in_dt, group, short_name)
     grid_info['target'] = get_target_grid_information(group, short_name)
 
     return grid_info
@@ -159,28 +156,24 @@ def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:
 
 def locate_row_and_column_for_group(
     in_dt: DataTree, group: str, short_name: str
-) -> tuple[DataArray, DataArray]:
+) -> dict[str, DataArray]:
     """Return the row and column information for this group.
 
     Use the short_name to determine the correct location of the row and column
     indices variables within in the input DataTree structure.
 
     """
-    if short_name == 'SPL2SMP_E':
-        return (in_dt[f'{group}/EASE_row_index'], in_dt[f'{group}/EASE_column_index'])
-    elif short_name == 'SPL2SMAP':
-        return (
-            in_dt[spl2smap_index_locator(group, 'EASE_row_index')],
-            in_dt[spl2smap_index_locator(group, 'EASE_column_index')],
-        )
-    else:
-        raise InvalidCollectionError(f'Invalid collection: {short_name}.')
+    try:
+        row = in_dt[COLLECTION_INFORMATION[short_name]['data_groups'][group]['row']]
+        column = in_dt[COLLECTION_INFORMATION[short_name]['data_groups'][group]['col']]
 
+        return {
+            'rows': row.astype(row.encoding.get('dtype', 'uint16')),
+            'cols': column.astype(column.encoding.get('dtype', 'uint16')),
+        }
 
-def spl2smap_index_locator(group: str, stem: str) -> str:
-    """Returns path to the column or row index variable."""
-    ext = '_3km' if group.endswith('_3km') else ''
-    return f'{group}/{stem}{ext}'
+    except KeyError as e:
+        raise InvalidCollectionError(f'Invalid collection or group: {e}.')
 
 
 def get_column_dataarray(in_dt: DataTree, group: str, short_name: str) -> DataArray:
@@ -217,6 +210,11 @@ def get_grid_and_crs(group, short_name):
 def is_polar_group(is_polar_group: str) -> bool:
     """If the group name ends with "_Polar" it's the Northern Hemisphere data."""
     return is_polar_group.endswith('_Polar')
+
+
+def get_data_groups(in_data: DataTree) -> set[str]:
+    """Returns list of input groups containing griddable data."""
+    return set(in_data['/'].children) - set(get_metadata_children(in_data))
 
 
 def get_metadata_children(in_data: DataTree) -> list[str]:
