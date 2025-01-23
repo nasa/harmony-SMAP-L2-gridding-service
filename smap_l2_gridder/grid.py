@@ -172,11 +172,6 @@ def locate_row_and_column_for_group(
     }
 
 
-def get_column_dataarray(in_dt: DataTree, group: str, short_name: str) -> DataArray:
-    """Return the dataarray containing the groups's column indices."""
-    return in_dt[f'/{group}/EASE_column_index']
-
-
 def get_target_grid_information(group: str, short_name: str) -> dict:
     """Return the target grid informaton.
 
