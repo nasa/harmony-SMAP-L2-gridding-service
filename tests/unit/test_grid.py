@@ -12,11 +12,11 @@ from smap_l2_gridder import grid
 from smap_l2_gridder.grid import (
     InvalidCollectionError,
     default_fill_value,
-    get_dataset_shortname,
+    get_collection_shortname,
     get_grid_information,
     get_target_grid_information,
     grid_variable,
-    locate_row_and_column_in_node,
+    locate_row_and_column_for_group,
     prepare_variable,
     process_input,
     spl2smap_index_locator,
@@ -123,77 +123,77 @@ def test_get_grid_information(sample_datatree, mocker):
     """Verify correct information is returned as grid_info for SPL2SMP_E data."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
 
-    for node in ['Soil_Moisture_Retrieval_Data_Polar', 'Soil_Moisture_Retrieval_Data']:
+    for group in ['Soil_Moisture_Retrieval_Data_Polar', 'Soil_Moisture_Retrieval_Data']:
         short_name = 'SPL2SMP_E'
-        actual_grid_info = get_grid_information(sample_datatree, node, short_name)
+        actual_grid_info = get_grid_information(sample_datatree, group, short_name)
         np.testing.assert_array_almost_equal(
-            actual_grid_info['src']['rows'], sample_datatree[f'{node}/EASE_row_index']
+            actual_grid_info['src']['rows'], sample_datatree[f'{group}/EASE_row_index']
         )
         np.testing.assert_array_almost_equal(
             actual_grid_info['src']['cols'],
-            sample_datatree[f'{node}/EASE_column_index'],
+            sample_datatree[f'{group}/EASE_column_index'],
         )
-        target_grid_info.assert_called_with(node, short_name)
+        target_grid_info.assert_called_with(group, short_name)
 
 
 @pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
 @pytest.mark.parametrize(
-    'node,suffix',
+    'group,suffix',
     [
         ('Soil_Moisture_Retrieval_Data_3km', '_3km'),
         ('Soil_Moisture_Retrieval_Data', ''),
     ],
 )
-def test_get_grid_information_spl2smap(sample_datatree, node, suffix, mocker):
+def test_get_grid_information_spl2smap(sample_datatree, group, suffix, mocker):
     """Verify correct information is returned as grid_info for SPL2SMAP data."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
 
     expected_short_name = 'SPL2SMAP'
-    short_name = get_dataset_shortname(sample_datatree)
+    short_name = get_collection_shortname(sample_datatree)
 
-    actual_grid_info = get_grid_information(sample_datatree, node, short_name)
+    actual_grid_info = get_grid_information(sample_datatree, group, short_name)
 
     np.testing.assert_array_almost_equal(
         actual_grid_info['src']['rows'],
-        sample_datatree[f'{node}/EASE_row_index{suffix}'],
+        sample_datatree[f'{group}/EASE_row_index{suffix}'],
     )
     np.testing.assert_array_almost_equal(
         actual_grid_info['src']['cols'],
-        sample_datatree[f'{node}/EASE_column_index{suffix}'],
+        sample_datatree[f'{group}/EASE_column_index{suffix}'],
     )
-    target_grid_info.assert_called_with(node, expected_short_name)
+    target_grid_info.assert_called_with(group, expected_short_name)
 
 
-def test_locate_row_and_column_in_node_SPL2SMP_E(mocker):
+def test_locate_row_and_column_for_group_SPL2SMP_E(mocker):
     """Tests SPL2SMP_E collection."""
     locator_patch = mocker.patch('smap_l2_gridder.grid.spl2smap_index_locator')
     mock_dt = mocker.Mock()
     mock_dt.__getitem__ = mocker.Mock()
 
-    row, col = locate_row_and_column_in_node(mock_dt, 'node', 'SPL2SMP_E')
+    row, col = locate_row_and_column_for_group(mock_dt, 'group', 'SPL2SMP_E')
     mock_dt.__getitem__.assert_has_calls(
-        [call('node/EASE_row_index'), call('node/EASE_column_index')]
+        [call('group/EASE_row_index'), call('group/EASE_column_index')]
     )
     locator_patch.assert_not_called
 
 
-def test_locate_row_and_column_in_node_SPL2SMAP(mocker):
+def test_locate_row_and_column_for_group_SPL2SMAP(mocker):
     """Tests SPL2SMAP collection."""
     locator_spy = mocker.spy(grid, 'spl2smap_index_locator')
     mock_dt = mocker.Mock()
     mock_dt.__getitem__ = mocker.Mock()
-    node = 'nodename_3km'
+    group = 'groupname_3km'
 
-    row, col = locate_row_and_column_in_node(mock_dt, node, 'SPL2SMAP')
+    row, col = locate_row_and_column_for_group(mock_dt, group, 'SPL2SMAP')
     mock_dt.__getitem__.assert_has_calls(
-        [call(f'{node}/EASE_row_index_3km'), call(f'{node}/EASE_column_index_3km')]
+        [call(f'{group}/EASE_row_index_3km'), call(f'{group}/EASE_column_index_3km')]
     )
     locator_spy.assert_has_calls(
-        [call(node, 'EASE_row_index'), call(node, 'EASE_column_index')]
+        [call(group, 'EASE_row_index'), call(group, 'EASE_column_index')]
     )
 
 
-def test_locate_row_and_column_in_node_bad_short_name(mocker):
+def test_locate_row_and_column_for_group_bad_short_name(mocker):
     """Check that unimplemented collection raises exception."""
     locator_patch = mocker.patch('smap_l2_gridder.grid.spl2smap_index_locator')
     mock_dt = mocker.Mock()
@@ -202,38 +202,40 @@ def test_locate_row_and_column_in_node_bad_short_name(mocker):
 
     short_name = 'MADEUP_SHORTNAME'
     with pytest.raises(InvalidCollectionError, match=f'.*{short_name}.*'):
-        locate_row_and_column_in_node(None, 'node_name', short_name)
+        locate_row_and_column_for_group(None, 'group_name', short_name)
 
     locator_patch.assert_not_called
     getitem_mock.assert_not_called
 
 
 @pytest.mark.parametrize(
-    'node,stem,expected',
+    'group,stem,expected',
     [
         ('SPL2SMAP', 'EASE_column_index', 'SPL2SMAP/EASE_column_index'),
-        ('node_3km', 'EASE_column_index', 'node_3km/EASE_column_index_3km'),
+        ('group_3km', 'EASE_column_index', 'group_3km/EASE_column_index_3km'),
         ('SPL2SMAP', 'EASE_row_index', 'SPL2SMAP/EASE_row_index'),
         ('SPL2SMAP_3km', 'EASE_row_index', 'SPL2SMAP_3km/EASE_row_index_3km'),
     ],
 )
-def test_spl2smap_index_locator(node, stem, expected):
+def test_spl2smap_index_locator(group, stem, expected):
     """Validate index locator for SPL2SMAP."""
-    assert spl2smap_index_locator(node, stem) == expected
+    assert spl2smap_index_locator(group, stem) == expected
 
 
 @pytest.mark.parametrize(
-    'node,short_name,expected',
+    'group,short_name,expected',
     [
-        ('any-node-name', 'SPL2SMP_E', 'EASE2_M09km.gpd'),
-        ('any-node-name_Polar', 'SPL2SMP_E', 'EASE2_N09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data', 'SPL2SMP_E', 'EASE2_M09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data_Polar', 'SPL2SMP_E', 'EASE2_N09km.gpd'),
+        # ('Soil_Moisture_Retrieval_Data', 'SPL2SMAP', 'EASE2_M09km.gpd')
+        # ('Soil_Moisture_Retrieval_Data_3km', 'SPL2SMAP', 'EASE2_M03km.gpd')
     ],
 )
-def test_get_target_grid_information(node, short_name, expected, mocker):
-    """Test that the node name correctly identifies which gpd file to parse."""
+def test_get_target_grid_information(group, short_name, expected, mocker):
+    """Test that the group name correctly identifies which gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information(node, short_name)
+    get_target_grid_information(group, short_name)
     parse_gpd_file_mock.assert_called_with(expected)
 
 

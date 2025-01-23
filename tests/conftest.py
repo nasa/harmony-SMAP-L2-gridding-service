@@ -18,7 +18,7 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
 
     A sample DataTree is created with the approximate shape of a SPL2SMP_E file
 
-    The test data is repeated for both global and polar nodes.
+    The test data is repeated for both global and polar groups.
 
     The tree is written to disk and the filename is returned.
 
@@ -30,10 +30,10 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
     )
     dt['Metadata/DatasetIdentification'] = DataArray(attrs={'shortName': 'SPL2SMP_E'})
 
-    nodes = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
-    for node in nodes:
-        dt[f'{node}'] = DataTree()
-        dt[f'{node}/EASE_column_index'] = DataArray(
+    groups = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
+    for group in groups:
+        dt[f'{group}'] = DataTree()
+        dt[f'{group}/EASE_column_index'] = DataArray(
             data=np.array([1175, 1175, 1175, 1175, 1175], dtype=np.uint16),
             dims=['phony_dim_0'],
             name='EASE_column_index',
@@ -45,7 +45,7 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
             },
         )
 
-        dt[f'{node}/EASE_row_index'] = DataArray(
+        dt[f'{group}/EASE_row_index'] = DataArray(
             data=np.array([1603, 1604, 1605, 1606, 1607], dtype=np.uint16),
             dims=['phony_dim_0'],
             attrs={
@@ -56,7 +56,7 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
             },
         )
 
-        dt[f'{node}/albedo'] = DataArray(
+        dt[f'{group}/albedo'] = DataArray(
             data=np.array(
                 [0.0009434, 0.00136986, 0.0025, 0.0, -9999.0], dtype=np.float32
             ),
@@ -75,7 +75,7 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
         # it's not acting like a bottle neck so I'm not sure what to do. But
         # for now I'll remove this and use mark to skip the test.
 
-        # dt[f'{node}/tb_time_utc'] = DataArray(
+        # dt[f'{group}/tb_time_utc'] = DataArray(
         #     data=np.array(
         #         [
         #             '2024-11-06T03:59:27.313Z',

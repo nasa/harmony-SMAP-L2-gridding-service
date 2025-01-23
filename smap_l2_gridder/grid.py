@@ -29,25 +29,25 @@ def transform_l2g_input(
 def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
-    short_name = get_dataset_shortname(in_data)
+    short_name = get_collection_shortname(in_data)
 
     out_data = transfer_metadata(in_data, out_data)
 
     # Process grids from all top level groups that are not only Metadata
-    data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
+    data_group_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
 
-    for node_name in data_node_names:
-        grid_info = get_grid_information(in_data, node_name, short_name)
-        vars_to_grid = get_target_variables(in_data, node_name)
+    for group_name in data_group_names:
+        grid_info = get_grid_information(in_data, group_name, short_name)
+        vars_to_grid = get_target_variables(in_data, group_name)
 
-        # Add coordinates and CRS metadata for this node_name
+        # Add coordinates and CRS metadata for this group_name
         x_dim, y_dim = compute_dims(grid_info['target'])
-        out_data[f'{node_name}/crs'] = create_crs(grid_info['target'])
-        out_data[f'{node_name}/x-dim'] = x_dim
-        out_data[f'{node_name}/y-dim'] = y_dim
+        out_data[f'{group_name}/crs'] = create_crs(grid_info['target'])
+        out_data[f'{group_name}/x-dim'] = x_dim
+        out_data[f'{group_name}/y-dim'] = y_dim
 
         for var_name in vars_to_grid:
-            full_var_name = f'{node_name}/{var_name}'
+            full_var_name = f'{group_name}/{var_name}'
             out_data[full_var_name] = prepare_variable(
                 in_data[full_var_name], grid_info
             )
@@ -132,79 +132,79 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     return np.dtype(data_type).type(np.iinfo(data_type).max)
 
 
-def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
+def get_target_variables(in_data: DataTree, group: str) -> Iterable[str]:
     """Get variables to be regridded in the output file."""
-    return in_data[node].data_vars
+    return in_data[group].data_vars
 
 
-def get_grid_information(in_dt: DataTree, node: str, short_name: str) -> dict:
+def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:
     """Gets required information to perform the gridding operation.
 
-    Using the node name and collection's short_name, find and returns the
+    Using the group name and collection's short_name, find and returns the
     column and row indices variables as well as the output target grid
     information.
 
     """
     src_grid_info = {}
-    row, column = locate_row_and_column_in_node(in_dt, node, short_name)
+    row, column = locate_row_and_column_for_group(in_dt, group, short_name)
     src_grid_info['rows'] = row.astype(row.encoding.get('dtype', 'uint16'))
     src_grid_info['cols'] = column.astype(column.encoding.get('dtype', 'uint16'))
 
     grid_info = {}
     grid_info['src'] = src_grid_info
-    grid_info['target'] = get_target_grid_information(node, short_name)
+    grid_info['target'] = get_target_grid_information(group, short_name)
 
     return grid_info
 
 
-def locate_row_and_column_in_node(
-    in_dt: DataTree, node: str, short_name: str
+def locate_row_and_column_for_group(
+    in_dt: DataTree, group: str, short_name: str
 ) -> tuple[DataArray, DataArray]:
-    """Return the row and column information for this node.
+    """Return the row and column information for this group.
 
     Use the short_name to determine the correct location of the row and column
     indices variables within in the input DataTree structure.
 
     """
     if short_name == 'SPL2SMP_E':
-        return (in_dt[f'{node}/EASE_row_index'], in_dt[f'{node}/EASE_column_index'])
+        return (in_dt[f'{group}/EASE_row_index'], in_dt[f'{group}/EASE_column_index'])
     elif short_name == 'SPL2SMAP':
         return (
-            in_dt[spl2smap_index_locator(node, 'EASE_row_index')],
-            in_dt[spl2smap_index_locator(node, 'EASE_column_index')],
+            in_dt[spl2smap_index_locator(group, 'EASE_row_index')],
+            in_dt[spl2smap_index_locator(group, 'EASE_column_index')],
         )
     else:
         raise InvalidCollectionError(f'Invalid collection: {short_name}.')
 
 
-def spl2smap_index_locator(node: str, stem: str) -> str:
+def spl2smap_index_locator(group: str, stem: str) -> str:
     """Returns path to the column or row index variable."""
-    ext = '_3km' if node.endswith('_3km') else ''
-    return f'{node}/{stem}{ext}'
+    ext = '_3km' if group.endswith('_3km') else ''
+    return f'{group}/{stem}{ext}'
 
 
-def get_column_dataarray(in_dt: DataTree, node: str, short_name: str) -> DataArray:
-    """Return the dataarray containing the node's column indices."""
-    return in_dt[f'/{node}/EASE_column_index']
+def get_column_dataarray(in_dt: DataTree, group: str, short_name: str) -> DataArray:
+    """Return the dataarray containing the groups's column indices."""
+    return in_dt[f'/{group}/EASE_column_index']
 
 
-def get_target_grid_information(node: str, short_name: str) -> dict:
+def get_target_grid_information(group: str, short_name: str) -> dict:
     """Return the target grid informaton.
 
-    Using the node name and collection short name return in the correct gpd and
+    Using the group name and collection short name return in the correct gpd and
     epsg information for the target grid.
 
     """
-    gpd_name, wkt = get_grid_and_crs(node, short_name)
+    gpd_name, wkt = get_grid_and_crs(group, short_name)
 
     target_grid_info = parse_gpd_file(gpd_name)
     target_grid_info['wkt'] = wkt
     return target_grid_info
 
 
-def get_grid_and_crs(node, short_name):
-    """Retrieve the grid and crs from collecton and node name."""
-    if is_polar_node(node):
+def get_grid_and_crs(group, short_name):
+    """Retrieve the grid and crs from collecton and group name."""
+    if is_polar_group(group):
         gpd_name = 'EASE2_N09km.gpd'
         wkt = EPSG_6931_WKT
     else:
@@ -214,24 +214,24 @@ def get_grid_and_crs(node, short_name):
     return gpd_name, wkt
 
 
-def is_polar_node(node: str) -> bool:
-    """If the node name ends with "_Polar" it's the Northern Hemisphere data."""
-    return node.endswith('_Polar')
+def is_polar_group(is_polar_group: str) -> bool:
+    """If the group name ends with "_Polar" it's the Northern Hemisphere data."""
+    return is_polar_group.endswith('_Polar')
 
 
 def get_metadata_children(in_data: DataTree) -> list[str]:
-    """Fetch nodes with metadata.
+    """Fetch list of groups containing only metadata.
 
     List of top level datatree children containing metadata to transfer
     directly to output file.
 
-    Note: This returns a constant for now, but may require reading the in_data
+    This returns a constant because all of the , but may require reading the in_data
     in the future.
     """
     return ['Metadata']
 
 
-def get_dataset_shortname(in_data: DataTree) -> str:
+def get_collection_shortname(in_data: DataTree) -> str:
     """Extract the short name identifier from the dataset metadata."""
     return in_data['Metadata/DatasetIdentification'].shortName
 
