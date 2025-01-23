@@ -138,10 +138,11 @@ def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
 
 
 def get_grid_information(in_dt: DataTree, node: str, short_name: str) -> dict:
-    """Get the column and row indices and target grid information.
+    """Gets required information to perform the gridding operation.
 
-    Using the node name and collection. Retrieve all of the information needed
-    to grid the node's data.
+    Using the node name and collection's short_name, find and returns the
+    column and row indices variables as well as the output target grid
+    information.
 
     """
     src_grid_info = {}

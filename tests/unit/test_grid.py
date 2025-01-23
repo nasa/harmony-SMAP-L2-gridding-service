@@ -136,20 +136,6 @@ def test_get_grid_information(sample_datatree, mocker):
         target_grid_info.assert_called_with(node, short_name)
 
 
-@pytest.mark.parametrize(
-    'node,stem,expected',
-    [
-        ('SPL2SMAP', 'EASE_column_index', 'SPL2SMAP/EASE_column_index'),
-        ('node_3km', 'EASE_column_index', 'node_3km/EASE_column_index_3km'),
-        ('SPL2SMAP', 'EASE_row_index', 'SPL2SMAP/EASE_row_index'),
-        ('SPL2SMAP_3km', 'EASE_row_index', 'SPL2SMAP_3km/EASE_row_index_3km'),
-    ],
-)
-def test_spl2smap_index_locator(node, stem, expected):
-    """Validate index locator for SPL2SMAP."""
-    assert spl2smap_index_locator(node, stem) == expected
-
-
 @pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
 @pytest.mark.parametrize(
     'node,suffix',
@@ -222,15 +208,33 @@ def test_locate_row_and_column_in_node_bad_short_name(mocker):
     getitem_mock.assert_not_called
 
 
-def test_get_target_grid_information(mocker):
+@pytest.mark.parametrize(
+    'node,stem,expected',
+    [
+        ('SPL2SMAP', 'EASE_column_index', 'SPL2SMAP/EASE_column_index'),
+        ('node_3km', 'EASE_column_index', 'node_3km/EASE_column_index_3km'),
+        ('SPL2SMAP', 'EASE_row_index', 'SPL2SMAP/EASE_row_index'),
+        ('SPL2SMAP_3km', 'EASE_row_index', 'SPL2SMAP_3km/EASE_row_index_3km'),
+    ],
+)
+def test_spl2smap_index_locator(node, stem, expected):
+    """Validate index locator for SPL2SMAP."""
+    assert spl2smap_index_locator(node, stem) == expected
+
+
+@pytest.mark.parametrize(
+    'node,short_name,expected',
+    [
+        ('any-node-name', 'SPL2SMP_E', 'EASE2_M09km.gpd'),
+        ('any-node-name_Polar', 'SPL2SMP_E', 'EASE2_N09km.gpd'),
+    ],
+)
+def test_get_target_grid_information(node, short_name, expected, mocker):
     """Test that the node name correctly identifies which gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information('any-node-name', 'SPL2SMP_E')
-    parse_gpd_file_mock.assert_called_with('EASE2_M09km.gpd')
-
-    get_target_grid_information('any-node-name_Polar', 'SPL2SMP_E')
-    parse_gpd_file_mock.assert_called_with('EASE2_N09km.gpd')
+    get_target_grid_information(node, short_name)
+    parse_gpd_file_mock.assert_called_with(expected)
 
 
 def test_grid_variable(sample_datatree, sample_grid_info):
