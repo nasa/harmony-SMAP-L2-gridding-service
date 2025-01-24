@@ -86,6 +86,7 @@ def test_process_sample_file(tmp_path, sample_SPL2SMP_E_file, sample_stac, mocke
             '/Soil_Moisture_Retrieval_Data_Polar',
             '/Metadata/Lineage',
             '/Metadata/Lineage/DEMSLP',
+            '/Metadata/DatasetIdentification',
         )
     )
     assert results['Soil_Moisture_Retrieval_Data'].coords['x-dim'].name == 'x-dim'

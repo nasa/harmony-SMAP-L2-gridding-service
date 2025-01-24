@@ -8,8 +8,8 @@ import pytest
 import xarray as xr
 from xarray import DataArray, DataTree
 
+from smap_l2_gridder.exceptions import InvalidCollectionError
 from smap_l2_gridder.grid import (
-    InvalidCollectionError,
     default_fill_value,
     get_collection_shortname,
     get_grid_information,

@@ -28,7 +28,8 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
     dt['Metadata/Lineage/DEMSLP'].attrs['Description'] = (
         'Representative surface slope data for each of the 9 km cells'
     )
-    dt['Metadata/DatasetIdentification'] = DataArray(attrs={'shortName': 'SPL2SMP_E'})
+    dt['Metadata/DatasetIdentification'] = DataTree()
+    dt['Metadata/DatasetIdentification'].attrs['shortName'] = 'SPL2SMP_E'
 
     groups = ['Soil_Moisture_Retrieval_Data', 'Soil_Moisture_Retrieval_Data_Polar']
     for group in groups:
@@ -107,7 +108,8 @@ def sample_SPL2SMAP_file(tmp_path) -> str:
 
     """
     dt = DataTree()
-    dt['Metadata/DatasetIdentification'] = DataArray(attrs={'shortName': 'SPL2SMAP'})
+    dt['Metadata/DatasetIdentification'] = DataTree()
+    dt['Metadata/DatasetIdentification'].attrs['shortName'] = 'SPL2SMAP'
 
     dt['Soil_Moisture_Retrieval_Data'] = DataTree()
     dt['Soil_Moisture_Retrieval_Data/EASE_column_index'] = DataArray(
