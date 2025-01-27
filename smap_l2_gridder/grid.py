@@ -66,11 +66,10 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
-    unzippable = ['tb_time_utc']
+    unzippable = ['tb_time_utc']  # can't zip strings
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
-        # can't zip strings
         **({'zlib': True, 'complevel': 6} if var.name not in unzippable else {}),
     }
     grid_data.encoding.update(encoding)
