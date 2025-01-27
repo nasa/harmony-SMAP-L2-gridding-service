@@ -3,12 +3,15 @@
 Define the data hierarchies necessary for gridding collections with the SMAP L2
 Gridder.
 
-While the input files are hierarchical, and in hdf format, they are not fully
+While the input files are hierarchical and in hdf format, they are not fully
 self describing. Each griddable variable is connected to two variables that
-contain the column and row of a grid, but there is not a fully standard
-location for finding those locations.  Additionally, there are a number of
-different resolution grids and coordinate reference systems, identified by a
-gpd file and epsg code.
+contain the column and row of a grid into which the value should be placed, but
+there is not a standard location for these indices variables.  Additionally,
+there are a number of different resolution grids and coordinate reference
+systems, identified by a gpd file and epsg code that are described in the
+reference for the dataset but are hard to determine by looking at the files
+themselves, for this reason we explictly layout this information in this file
+along with helper routines to access the information.
 
 """
 
@@ -78,6 +81,24 @@ COLLECTION_INFORMATION = {
 }
 
 
+def get_all_information() -> dict:
+    """Returns all known collection information.
+
+    Mostly exists to mock tests.
+    """
+    return COLLECTION_INFORMATION
+
+
+def get_collection_info(short_name: str) -> dict:
+    """Return the configuration information for the short_name's collection."""
+    try:
+        return get_all_information()[short_name]
+    except KeyError as exc:
+        raise InvalidCollectionError(
+            f'No collection information for {short_name}'
+        ) from exc
+
+
 def get_collection_group_info(short_name: str, group: str) -> dict:
     """Get basic information for a collection's group.
 
@@ -88,18 +109,10 @@ def get_collection_group_info(short_name: str, group: str) -> dict:
     collection = get_collection_info(short_name)
     try:
         group_info = collection['data_groups'][group]
-    except KeyError:
-        raise InvalidCollectionError(f'No group named {group} in {short_name}')
+    except KeyError as exc:
+        raise InvalidCollectionError(f'No group named {group} in {short_name}') from exc
 
     return group_info
-
-
-def get_collection_info(short_name: str) -> dict:
-    """Return the information for the short_name's collection."""
-    try:
-        return COLLECTION_INFORMATION[short_name]
-    except KeyError:
-        raise InvalidCollectionError(f'No collection information for {short_name}')
 
 
 def get_dropped_variables(short_name: str, group: str) -> set[str]:

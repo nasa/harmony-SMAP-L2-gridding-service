@@ -12,7 +12,11 @@ import numpy as np
 from pyproj import CRS
 from xarray import DataArray, DataTree, open_datatree
 
-from .collections import get_collection_group_info, get_dropped_variables
+from .collections import (
+    get_collection_group_info,
+    get_collection_info,
+    get_dropped_variables,
+)
 from .crs import compute_dims, create_crs, parse_gpd_file
 
 
@@ -197,13 +201,12 @@ def get_data_groups(in_data: DataTree) -> set[str]:
 def get_metadata_children(in_data: DataTree) -> list[str]:
     """Fetch list of groups containing only metadata.
 
-    List of top level datatree children containing metadata to transfer
-    directly to output file.
+    List of top level datatree children containing only metadata to transfer
+    directly to output file without any changes.
 
-    This returns a constant because all of the , but may require reading the in_data
-    in the future.
     """
-    return ['Metadata']
+    collection_config = get_collection_info(get_collection_shortname(in_data))
+    return collection_config['metadata']
 
 
 def get_collection_shortname(in_data: DataTree) -> str:
