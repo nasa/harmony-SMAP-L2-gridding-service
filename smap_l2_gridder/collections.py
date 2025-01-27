@@ -1,17 +1,16 @@
 """Collection information.
 
-Define the data hierarchies necessary for gridding collections with the SMAP L2
-Gridder.
+Defines hierarchies necessary for gridding collections with the SMAP L2 Gridder.
 
 While the input files are hierarchical and in hdf format, they are not fully
-self describing. Each griddable variable is connected to two variables that
-contain the column and row of a grid into which the value should be placed, but
-there is not a standard location for these indices variables.  Additionally,
+self describing. Each griddable variable is tied to two variables that contain
+the column and row of a grid into which the value should be placed. But these
+column and row indices are not always in the same location.  Additionally,
 there are a number of different resolution grids and coordinate reference
-systems, identified by a gpd file and epsg code that are described in the
-reference for the dataset but are hard to determine by looking at the files
-themselves, for this reason we explictly layout this information in this file
-along with helper routines to access the information.
+systems, that here are identified by a gpd file and epsg code that are
+described in the documentation for the dataset but are hard/impossible to
+determine by looking at the files themselves, for this reason we explictly lay
+out this information in this file along with helper routines to ease access.
 
 """
 
