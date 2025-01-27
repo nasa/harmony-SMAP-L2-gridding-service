@@ -12,7 +12,7 @@ import numpy as np
 from pyproj import CRS
 from xarray import DataArray, DataTree, open_datatree
 
-from .collections import get_collection_group_info
+from .collections import get_collection_group_info, get_dropped_variables
 from .crs import compute_dims, create_crs, parse_gpd_file
 
 
@@ -40,7 +40,7 @@ def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = 
 
     for group_name in data_group_names:
         grid_info = get_grid_information(in_data, group_name, short_name)
-        vars_to_grid = get_target_variables(in_data, group_name)
+        vars_to_grid = get_target_variables(in_data, group_name, short_name)
 
         # Add coordinates and CRS metadata for this group_name
         x_dim, y_dim = compute_dims(grid_info['target'])
@@ -62,7 +62,7 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
-    unzippable = ['tb_time_utc', 'spacecraft_overpass_time_utc']
+    unzippable = ['tb_time_utc']
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
@@ -135,9 +135,12 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     return np.dtype(data_type).type(np.iinfo(data_type).max)
 
 
-def get_target_variables(in_data: DataTree, group: str) -> Iterable[str]:
+def get_target_variables(
+    in_data: DataTree, group: str, short_name: str
+) -> Iterable[str]:
     """Get variables to be regridded in the output file."""
-    return in_data[group].data_vars
+    dropped_variables = get_dropped_variables(short_name, group)
+    return set(in_data[group].data_vars) - set(dropped_variables)
 
 
 def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:

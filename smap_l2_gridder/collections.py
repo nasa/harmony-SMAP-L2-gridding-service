@@ -45,11 +45,16 @@ COLLECTION_INFORMATION = {
     'SPL2SMAP': {
         'metadata': ['Metadata'],
         'data_groups': {
-            'Soil_Moisture_Retrieval_Data': {**STANDARD_LOCATIONS, **GRIDS['M09km']},
+            'Soil_Moisture_Retrieval_Data': {
+                **STANDARD_LOCATIONS,
+                **GRIDS['M09km'],
+                'dropped_variables': ['spacecraft_overpass_time_utc'],
+            },
             'Soil_Moisture_Retrieval_Data_3km': {
                 'row': 'Soil_Moisture_Retrieval_Data_3km/EASE_row_index_3km',
                 'col': 'Soil_Moisture_Retrieval_Data_3km/EASE_column_index_3km',
                 **GRIDS['M03km'],
+                'dropped_variables': ['spacecraft_overpass_time_utc'],
             },
         },
     },
@@ -73,21 +78,35 @@ COLLECTION_INFORMATION = {
 }
 
 
-def get_collection_group_info(short_name, group) -> dict:
+def get_collection_group_info(short_name: str, group: str) -> dict:
     """Get basic information for a collection's group.
 
     Helper function to identify which information was incorrect when attempting
     to retrieve the desired gridding information
 
     """
-    try:
-        collection = COLLECTION_INFORMATION[short_name]
-    except KeyError:
-        raise InvalidCollectionError(f'No collection information for {short_name}')
-
+    collection = get_collection_info(short_name)
     try:
         group_info = collection['data_groups'][group]
     except KeyError:
         raise InvalidCollectionError(f'No group named {group} in {short_name}')
 
     return group_info
+
+
+def get_collection_info(short_name: str) -> dict:
+    """Return the information for the short_name's collection."""
+    try:
+        return COLLECTION_INFORMATION[short_name]
+    except KeyError:
+        raise InvalidCollectionError(f'No collection information for {short_name}')
+
+
+def get_dropped_variables(short_name: str, group: str) -> set[str]:
+    """Return a set of variables to be excluded from the processed file."""
+    try:
+        info = get_collection_group_info(short_name, group)
+        dropped_vars = info['dropped_variables']
+        return set(dropped_vars)
+    except KeyError:
+        return set()
