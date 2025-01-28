@@ -97,7 +97,6 @@ def test_get_dropped_variables(mocker, mock_collection_info):
     )
 
     expected = set(['hot-variable1', 'hot-variable2'])
-
     assert get_dropped_variables('sample2_collection', 'dropped_group_name') == expected
 
     expected = set()
