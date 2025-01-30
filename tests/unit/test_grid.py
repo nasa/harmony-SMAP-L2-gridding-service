@@ -15,6 +15,7 @@ from smap_l2_gridder.grid import (
     get_grid_information,
     get_target_grid_information,
     grid_variable,
+    is_compressible,
     locate_row_and_column_for_group,
     prepare_variable,
     process_input,
@@ -101,16 +102,29 @@ def test_prepare_variable_albedo(sample_datatree, sample_grid_info):
 
 def test_prepare_variable_encoding_of_utc_time(sample_datatree, sample_grid_info):
     """Test string variables don't get compression encoding."""
-    var = sample_datatree['Soil_Moisture_Retrieval_Data/EASE_column_index']
-    var.name = 'tb_time_utc'
-    result = prepare_variable(var, sample_grid_info)
+    tb_time_utc = DataArray(
+        data=np.array(
+            [
+                '2024-11-06T03:59:27.313Z',
+                '2024-11-06T03:59:25.754Z',
+                '2024-11-06T03:59:24.374Z',
+                '2024-11-06T03:59:22.735Z',
+                '2024-11-06T03:59:21.191Z',
+            ],
+            dtype='<U24',
+        ),
+        dims=['phony_dim_0'],
+        attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+    )
+
+    result = prepare_variable(tb_time_utc, sample_grid_info)
 
     assert isinstance(result, DataArray)
     assert result.dims == ('y-dim', 'x-dim')
     for i in range(5):
-        assert result[i, i] == var[i]
+        assert result[i, i] == tb_time_utc[i]
 
-    assert result.encoding['_FillValue'] == np.uint16(65534)
+    assert result.encoding['_FillValue'] is None
     assert 'zlib' not in result.encoding
     assert 'complevel' not in result.encoding
     assert result.attrs['grid_mapping'] == 'crs'
@@ -218,6 +232,25 @@ def test_get_target_grid_information(group, short_name, expected, mocker):
 
     get_target_grid_information(group, short_name)
     parse_gpd_file_mock.assert_called_with(expected)
+
+
+@pytest.mark.parametrize(
+    'dtype,expected',
+    [
+        (np.float32, True),
+        (np.int64, True),
+        (np.datetime64, True),
+        (np.bool_, True),
+        (np.complex128, True),
+        (str, False),
+        (np.dtype('U25'), False),
+        (np.str_, False),
+        (np.object_, False),
+    ],
+)
+def test_is_compressible(dtype, expected):
+    """Test the compressible types."""
+    assert is_compressible(dtype) == expected
 
 
 def test_grid_variable(sample_datatree, sample_grid_info):

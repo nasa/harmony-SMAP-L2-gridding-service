@@ -66,14 +66,18 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
-    unzippable = ['tb_time_utc']  # can't zip strings
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
-        **({'zlib': True, 'complevel': 6} if var.name not in unzippable else {}),
+        **({'zlib': True, 'complevel': 6} if is_compressible(grid_data.dtype) else {}),
     }
     grid_data.encoding.update(encoding)
     return grid_data
+
+
+def is_compressible(dtype: np.dtype) -> bool:
+    """Returns false if the variable has a non-compressible type."""
+    return not (np.issubdtype(dtype, np.str_) or np.issubdtype(dtype, np.object_))
 
 
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
