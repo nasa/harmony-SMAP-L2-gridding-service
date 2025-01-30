@@ -5,7 +5,6 @@ routines to translate the 1D intput arrays into the EASE grid output format
 """
 
 from collections.abc import Iterable
-from logging import Logger
 from pathlib import Path
 
 import numpy as np
@@ -20,18 +19,16 @@ from .collections import (
 from .crs import compute_dims, create_crs, parse_gpd_file
 
 
-def transform_l2g_input(
-    input_filename: Path, output_filename: Path, logger: Logger
-) -> None:
+def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
     """Entrypoint for L2G-Gridding-Service.
 
     Opens input and processes the data to a new output file.
     """
     with open_datatree(input_filename, decode_times=False) as in_data:
-        process_input(in_data, output_filename, logger=logger)
+        process_input(in_data, output_filename)
 
 
-def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
+def process_input(in_data: DataTree, output_file: Path):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
 
