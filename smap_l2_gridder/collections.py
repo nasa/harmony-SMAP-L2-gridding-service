@@ -36,11 +36,13 @@ COLLECTION_INFORMATION = {
             'Soil_Moisture_Retrieval_Data': {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M09km'],
+                'dropped_variables': ['tb_time_utc'],
             },
             'Soil_Moisture_Retrieval_Data_Polar': {
                 'row': 'Soil_Moisture_Retrieval_Data_Polar/EASE_row_index',
                 'col': 'Soil_Moisture_Retrieval_Data_Polar/EASE_column_index',
                 **GRIDS['N09km'],
+                'dropped_variables': ['tb_time_utc'],
             },
         },
     },
