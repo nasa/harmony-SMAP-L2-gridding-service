@@ -1,17 +1,22 @@
 """Tests for grid module."""
 
 from pathlib import Path
+from unittest.mock import call
 
 import numpy as np
 import pytest
 import xarray as xr
 from xarray import DataArray, DataTree
 
+from smap_l2_gridder.exceptions import InvalidCollectionError
 from smap_l2_gridder.grid import (
     default_fill_value,
+    get_collection_shortname,
     get_grid_information,
     get_target_grid_information,
     grid_variable,
+    is_compressible,
+    locate_row_and_column_for_group,
     prepare_variable,
     process_input,
     transfer_metadata,
@@ -97,45 +102,155 @@ def test_prepare_variable_albedo(sample_datatree, sample_grid_info):
 
 def test_prepare_variable_encoding_of_utc_time(sample_datatree, sample_grid_info):
     """Test string variables don't get compression encoding."""
-    var = sample_datatree['Soil_Moisture_Retrieval_Data/EASE_column_index']
-    var.name = 'tb_time_utc'
-    result = prepare_variable(var, sample_grid_info)
+    tb_time_utc = DataArray(
+        data=np.array(
+            [
+                '2024-11-06T03:59:27.313Z',
+                '2024-11-06T03:59:25.754Z',
+                '2024-11-06T03:59:24.374Z',
+                '2024-11-06T03:59:22.735Z',
+                '2024-11-06T03:59:21.191Z',
+            ],
+            dtype='<U24',
+        ),
+        dims=['phony_dim_0'],
+        attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+    )
+
+    result = prepare_variable(tb_time_utc, sample_grid_info)
 
     assert isinstance(result, DataArray)
     assert result.dims == ('y-dim', 'x-dim')
     for i in range(5):
-        assert result[i, i] == var[i]
+        assert result[i, i] == tb_time_utc[i]
 
-    assert result.encoding['_FillValue'] == np.uint16(65534)
+    assert result.encoding['_FillValue'] is None
     assert 'zlib' not in result.encoding
     assert 'complevel' not in result.encoding
     assert result.attrs['grid_mapping'] == 'crs'
 
 
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMP_E_file'], indirect=True)
 def test_get_grid_information(sample_datatree, mocker):
-    """Verify correct information is returned as grid_info."""
+    """Verify correct information is returned as grid_info for SPL2SMP_E data."""
     target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
-    node = 'Soil_Moisture_Retrieval_Data_Polar'
 
-    actual_grid_info = get_grid_information(sample_datatree, node)
+    for group in ['Soil_Moisture_Retrieval_Data_Polar', 'Soil_Moisture_Retrieval_Data']:
+        short_name = 'SPL2SMP_E'
+        actual_grid_info = get_grid_information(sample_datatree, group, short_name)
+        np.testing.assert_array_almost_equal(
+            actual_grid_info['src']['rows'], sample_datatree[f'{group}/EASE_row_index']
+        )
+        np.testing.assert_array_almost_equal(
+            actual_grid_info['src']['cols'],
+            sample_datatree[f'{group}/EASE_column_index'],
+        )
+        target_grid_info.assert_called_with(group, short_name)
+
+
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+@pytest.mark.parametrize(
+    'group,suffix',
+    [
+        ('Soil_Moisture_Retrieval_Data_3km', '_3km'),
+        ('Soil_Moisture_Retrieval_Data', ''),
+    ],
+)
+def test_get_grid_information_spl2smap(sample_datatree, group, suffix, mocker):
+    """Verify correct information is returned as grid_info for SPL2SMAP data."""
+    target_grid_info = mocker.patch('smap_l2_gridder.grid.get_target_grid_information')
+
+    expected_short_name = 'SPL2SMAP'
+    short_name = get_collection_shortname(sample_datatree)
+
+    actual_grid_info = get_grid_information(sample_datatree, group, short_name)
+
     np.testing.assert_array_almost_equal(
-        actual_grid_info['src']['rows'], sample_datatree[f'{node}/EASE_row_index']
+        actual_grid_info['src']['rows'],
+        sample_datatree[f'{group}/EASE_row_index{suffix}'],
     )
     np.testing.assert_array_almost_equal(
-        actual_grid_info['src']['cols'], sample_datatree[f'{node}/EASE_column_index']
+        actual_grid_info['src']['cols'],
+        sample_datatree[f'{group}/EASE_column_index{suffix}'],
     )
-    target_grid_info.assert_called_with(f'{node}')
+    target_grid_info.assert_called_with(group, expected_short_name)
 
 
-def test_get_target_grid_information(mocker):
-    """Test that the node name correctly identifies the gpd file to parse."""
+def test_locate_row_and_column_for_group_SPL2SMP_E(mocker):
+    """Tests SPL2SMP_E collection."""
+    mock_dt = mocker.Mock()
+    mock_dt.__getitem__ = mocker.Mock()
+
+    row, col = locate_row_and_column_for_group(
+        mock_dt, 'Soil_Moisture_Retrieval_Data', 'SPL2SMP_E'
+    )
+    mock_dt.__getitem__.assert_has_calls(
+        [
+            call('Soil_Moisture_Retrieval_Data/EASE_row_index'),
+            call('Soil_Moisture_Retrieval_Data/EASE_column_index'),
+        ]
+    )
+
+
+def test_locate_row_and_column_for_group_SPL2SMAP(mocker):
+    """Tests SPL2SMAP collection."""
+    mock_dt = mocker.Mock()
+    mock_dt.__getitem__ = mocker.Mock()
+    group = 'Soil_Moisture_Retrieval_Data_3km'
+
+    row, col = locate_row_and_column_for_group(mock_dt, group, 'SPL2SMAP')
+    mock_dt.__getitem__.assert_has_calls(
+        [call(f'{group}/EASE_row_index_3km'), call(f'{group}/EASE_column_index_3km')]
+    )
+
+
+def test_locate_row_and_column_for_group_bad_short_name(mocker):
+    """Check that unimplemented collection raises exception."""
+    mock_dt = mocker.Mock()
+    getitem_mock = mocker.Mock()
+    mock_dt.__getitem__ = getitem_mock
+
+    short_name = 'MADEUP_SHORTNAME'
+    with pytest.raises(InvalidCollectionError, match=f'.*{short_name}.*'):
+        locate_row_and_column_for_group(None, 'group_name', short_name)
+
+    getitem_mock.assert_not_called
+
+
+@pytest.mark.parametrize(
+    'group,short_name,expected',
+    [
+        ('Soil_Moisture_Retrieval_Data', 'SPL2SMP_E', 'EASE2_M09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data_Polar', 'SPL2SMP_E', 'EASE2_N09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data', 'SPL2SMAP', 'EASE2_M09km.gpd'),
+        ('Soil_Moisture_Retrieval_Data_3km', 'SPL2SMAP', 'EASE2_M03km.gpd'),
+    ],
+)
+def test_get_target_grid_information(group, short_name, expected, mocker):
+    """Test that the group name correctly identifies which gpd file to parse."""
     parse_gpd_file_mock = mocker.patch('smap_l2_gridder.grid.parse_gpd_file')
 
-    get_target_grid_information('any-node-name')
-    parse_gpd_file_mock.assert_called_with('EASE2_M09km.gpd')
+    get_target_grid_information(group, short_name)
+    parse_gpd_file_mock.assert_called_with(expected)
 
-    get_target_grid_information('any-node-name_Polar')
-    parse_gpd_file_mock.assert_called_with('EASE2_N09km.gpd')
+
+@pytest.mark.parametrize(
+    'dtype,expected',
+    [
+        (np.float32, True),
+        (np.int64, True),
+        (np.datetime64, True),
+        (np.bool_, True),
+        (np.complex128, True),
+        (str, False),
+        (np.dtype('U25'), False),
+        (np.str_, False),
+        (np.object_, False),
+    ],
+)
+def test_is_compressible(dtype, expected):
+    """Test the compressible types."""
+    assert is_compressible(dtype) == expected
 
 
 def test_grid_variable(sample_datatree, sample_grid_info):

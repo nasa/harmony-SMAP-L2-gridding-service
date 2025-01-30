@@ -5,10 +5,10 @@ from textwrap import dedent
 
 import numpy as np
 import pytest
+from pyproj import CRS
 from xarray import DataArray
 
 from smap_l2_gridder.crs import (
-    EPSG_6933_WKT,
     Geotransform,
     compute_dims,
     convert_value,
@@ -32,7 +32,7 @@ sample_target_info = {
     'Grid Height': 10,
     'Grid Map Origin Column': -0.5,
     'Grid Map Origin Row': -0.5,
-    'wkt': EPSG_6933_WKT,
+    'wkt': CRS('EPSG:6933').to_wkt(),
 }
 
 

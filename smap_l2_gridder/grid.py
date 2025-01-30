@@ -5,47 +5,52 @@ routines to translate the 1D intput arrays into the EASE grid output format
 """
 
 from collections.abc import Iterable
-from logging import Logger
 from pathlib import Path
 
 import numpy as np
+from pyproj import CRS
 from xarray import DataArray, DataTree, open_datatree
 
-from .crs import EPSG_6931_WKT, EPSG_6933_WKT, compute_dims, create_crs, parse_gpd_file
+from .collections import (
+    get_collection_group_info,
+    get_collection_info,
+    get_dropped_variables,
+)
+from .crs import compute_dims, create_crs, parse_gpd_file
 
 
-def transform_l2g_input(
-    input_filename: Path, output_filename: Path, logger: Logger
-) -> None:
+def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
     """Entrypoint for L2G-Gridding-Service.
 
     Opens input and processes the data to a new output file.
     """
     with open_datatree(input_filename, decode_times=False) as in_data:
-        process_input(in_data, output_filename, logger=logger)
+        process_input(in_data, output_filename)
 
 
-def process_input(in_data: DataTree, output_file: Path, logger: None | Logger = None):
+def process_input(in_data: DataTree, output_file: Path):
     """Process input file to generate gridded output file."""
     out_data = DataTree()
+
+    short_name = get_collection_shortname(in_data)
 
     out_data = transfer_metadata(in_data, out_data)
 
     # Process grids from all top level groups that are not only Metadata
-    data_node_names = set(in_data['/'].children) - set(get_metadata_children(in_data))
+    data_group_names = get_data_groups(in_data)
 
-    for node_name in data_node_names:
-        grid_info = get_grid_information(in_data, node_name)
-        vars_to_grid = get_target_variables(in_data, node_name)
+    for group_name in data_group_names:
+        grid_info = get_grid_information(in_data, group_name, short_name)
+        vars_to_grid = get_target_variables(in_data, group_name, short_name)
 
-        # Add coordinates and CRS metadata for this node_name
+        # Add coordinates and CRS metadata for this group_name
         x_dim, y_dim = compute_dims(grid_info['target'])
-        out_data[f'{node_name}/crs'] = create_crs(grid_info['target'])
-        out_data[f'{node_name}/x-dim'] = x_dim
-        out_data[f'{node_name}/y-dim'] = y_dim
+        out_data[f'{group_name}/crs'] = create_crs(grid_info['target'])
+        out_data[f'{group_name}/x-dim'] = x_dim
+        out_data[f'{group_name}/y-dim'] = y_dim
 
         for var_name in vars_to_grid:
-            full_var_name = f'{node_name}/{var_name}'
+            full_var_name = f'{group_name}/{var_name}'
             out_data[full_var_name] = prepare_variable(
                 in_data[full_var_name], grid_info
             )
@@ -61,11 +66,15 @@ def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     encoding = {
         '_FillValue': variable_fill_value(var),
         'coordinates': var.encoding.get('coordinates', None),
-        # can't zip strings
-        **({'zlib': True, 'complevel': 6} if var.name != 'tb_time_utc' else {}),
+        **({'zlib': True, 'complevel': 6} if is_compressible(grid_data.dtype) else {}),
     }
     grid_data.encoding.update(encoding)
     return grid_data
+
+
+def is_compressible(dtype: np.dtype) -> bool:
+    """Returns false if the variable has a non-compressible type."""
+    return not (np.issubdtype(dtype, np.str_) or np.issubdtype(dtype, np.object_))
 
 
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
@@ -130,67 +139,79 @@ def default_fill_value(data_type: np.dtype | None) -> np.integer | np.floating |
     return np.dtype(data_type).type(np.iinfo(data_type).max)
 
 
-def get_target_variables(in_data: DataTree, node: str) -> Iterable[str]:
-    """Get variables to be regridded in the output file.
+def get_target_variables(
+    in_data: DataTree, group: str, short_name: str
+) -> Iterable[str]:
+    """Get variables to be regridded in the output file."""
+    dropped_variables = get_dropped_variables(short_name, group)
+    return set(in_data[group].data_vars) - set(dropped_variables)
 
-    TODO [MHS, 11/07/2024]: This is all variables now, but also might have
-    some special handling cases in the future.
-    """
-    return in_data[node].data_vars
 
+def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:
+    """Gets required information to perform the gridding operation.
 
-def get_grid_information(in_data: DataTree, node: str) -> dict:
-    """Get the column and row index locations and grid information for this node.
-
-    For the PoC this will always be "node/EASE_column_index",
-    "node/EASE_row_index", and EASE Grid 9km data either global or north grid.
-
-    TODO [MHS, 11/06/2024] This might go in a different file later with logic to
-    suss which grid each node is representing.
+    Using the group name and collection's short_name, find and returns the
+    column and row indices variables as well as the output target grid
+    information.
 
     """
-    src_grid_info = {}
-    row = in_data[f'/{node}/EASE_row_index']
-    column = in_data[f'/{node}/EASE_column_index']
-    src_grid_info['rows'] = row.astype(row.encoding.get('dtype', 'uint16'))
-    src_grid_info['cols'] = column.astype(column.encoding.get('dtype', 'uint16'))
-
     grid_info = {}
-    grid_info['src'] = src_grid_info
-    grid_info['target'] = get_target_grid_information(node)
+    grid_info['src'] = locate_row_and_column_for_group(in_dt, group, short_name)
+    grid_info['target'] = get_target_grid_information(group, short_name)
 
     return grid_info
 
 
-def get_target_grid_information(node: str) -> dict:
-    """Return the target grid informaton."""
-    if is_polar_node(node):
-        gpd_name = 'EASE2_N09km.gpd'
-        wkt = EPSG_6931_WKT
-    else:
-        gpd_name = 'EASE2_M09km.gpd'
-        wkt = EPSG_6933_WKT
+def locate_row_and_column_for_group(
+    in_dt: DataTree, group: str, short_name: str
+) -> dict[str, DataArray]:
+    """Return the row and column information for this group.
 
-    target_grid_info = parse_gpd_file(gpd_name)
-    target_grid_info['wkt'] = wkt
+    Use the short_name to determine the correct location of the row and column
+    indices variables within in the input DataTree structure.
+
+    """
+    info = get_collection_group_info(short_name, group)
+    row = in_dt[info['row']]
+    column = in_dt[info['col']]
+    return {
+        'rows': row.astype(row.encoding.get('dtype', 'uint16')),
+        'cols': column.astype(column.encoding.get('dtype', 'uint16')),
+    }
+
+
+def get_target_grid_information(group: str, short_name: str) -> dict:
+    """Return the target grid informaton.
+
+    Using the group name and collection short name look up the gpd and epsg
+    code that represent the target grid.
+
+    """
+    info = get_collection_group_info(short_name, group)
+    target_grid_info = parse_gpd_file(info['gpd'])
+    target_grid_info['wkt'] = CRS(info['epsg']).to_wkt()
     return target_grid_info
 
 
-def is_polar_node(node: str) -> bool:
-    """If the node name ends with "_Polar" it's the Northern Hemisphere data."""
-    return node.endswith('_Polar')
+def get_data_groups(in_data: DataTree) -> set[str]:
+    """Returns list of input groups containing griddable data."""
+    return set(in_data['/'].children) - set(get_metadata_children(in_data))
 
 
 def get_metadata_children(in_data: DataTree) -> list[str]:
-    """Fetch nodes with metadata.
+    """Fetch list of groups containing only metadata.
 
-    List of top level datatree children containing metadata to transfer
-    directly to output file.
+    List of top level datatree children containing only metadata to transfer
+    directly to output file without any changes.
 
-    Note: This returns a constant for now, but may require reading the in_data
-    in the future.
     """
-    return ['Metadata']
+    collection_config = get_collection_info(get_collection_shortname(in_data))
+    return collection_config['metadata']
+
+
+def get_collection_shortname(in_data: DataTree) -> str:
+    """Extract the short name identifier from the dataset metadata."""
+    return in_data['Metadata/DatasetIdentification'].shortName
 
 
 def transfer_metadata(in_data: DataTree, out_data: DataTree) -> DataTree:

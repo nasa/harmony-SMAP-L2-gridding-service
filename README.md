@@ -2,7 +2,7 @@
 
 This repository contains the code for the Harmony-SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
 
-This code currently works on `SPL2SMP_E` data and will be adapted for other SMAP collections of gridded trajectory data.
+This code currently works on `SPL2SMP_E`, and `SPL2SMAP` data and will be adapted for other SMAP collections [`SPL2SMP`,`SPL2SMA`] of gridded trajectory data.
 
 
 ## Transforming Data

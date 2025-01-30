@@ -50,9 +50,7 @@ class SMAPL2GridderAdapter(BaseHarmonyAdapter):
                     asset.href, is_regridded=True, ext='.nc'
                 )
 
-                transform_l2g_input(
-                    input_filepath, working_filename, logger=self.logger
-                )
+                transform_l2g_input(input_filepath, working_filename)
 
                 # Stage the transformed output:
                 staged_url = stage(
