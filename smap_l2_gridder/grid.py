@@ -14,7 +14,7 @@ from xarray import DataArray, DataTree, open_datatree
 from .collections import (
     get_collection_group_info,
     get_collection_info,
-    get_dropped_variables,
+    get_excluded_science_variables,
 )
 from .crs import compute_dims, create_crs, parse_gpd_file
 
@@ -143,8 +143,8 @@ def get_target_variables(
     in_data: DataTree, group: str, short_name: str
 ) -> Iterable[str]:
     """Get variables to be regridded in the output file."""
-    dropped_variables = get_dropped_variables(short_name, group)
-    return set(in_data[group].data_vars) - set(dropped_variables)
+    excluded_science_variables = get_excluded_science_variables(short_name, group)
+    return set(in_data[group].data_vars) - set(excluded_science_variables)
 
 
 def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:

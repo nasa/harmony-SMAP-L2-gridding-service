@@ -6,7 +6,7 @@ from smap_l2_gridder.collections import (
     InvalidCollectionError,
     get_collection_group_info,
     get_collection_info,
-    get_dropped_variables,
+    get_excluded_science_variables,
 )
 
 
@@ -39,7 +39,7 @@ def mock_collection_info():
                     'col': 'path/to/col',
                     'gpd': 'test.gpd',
                     'epsg': 'EPSG:test',
-                    'dropped_variables': ['hot-variable1', 'hot-variable2'],
+                    'ExcludedScienceVariables': ['hot-variable1', 'hot-variable2'],
                 }
             },
         },
@@ -89,7 +89,7 @@ def test_get_collection_group_info(mocker, mock_collection_info):
         get_collection_group_info('invalid_sample_collection', 'invalid_sample_group')
 
 
-def test_get_dropped_variables(mocker, mock_collection_info):
+def test_get_excluded_science_variables(mocker, mock_collection_info):
     """Test dropped variable functionality."""
     mocker.patch(
         'smap_l2_gridder.collections.get_all_information',
@@ -97,13 +97,19 @@ def test_get_dropped_variables(mocker, mock_collection_info):
     )
 
     expected = set(['hot-variable1', 'hot-variable2'])
-    assert get_dropped_variables('sample2_collection', 'dropped_group_name') == expected
+    assert (
+        get_excluded_science_variables('sample2_collection', 'dropped_group_name')
+        == expected
+    )
 
     expected = set()
-    assert get_dropped_variables('sample_collection', 'sample_group_name') == expected
+    assert (
+        get_excluded_science_variables('sample_collection', 'sample_group_name')
+        == expected
+    )
 
     with pytest.raises(
         InvalidCollectionError,
         match='No collection information for invalid_collection_name',
     ):
-        get_dropped_variables('invalid_collection_name', 'group')
+        get_excluded_science_variables('invalid_collection_name', 'group')
