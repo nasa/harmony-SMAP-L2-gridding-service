@@ -67,7 +67,11 @@ COLLECTION_INFORMATION = {
         'data_groups': {
             'Ancillary_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
             'Radar_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
-            'Soil_Moisture_Retrieval_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
+            'Soil_Moisture_Retrieval_Data': {
+                **STANDARD_LOCATIONS,
+                **GRIDS['M03km'],
+                'dropped_variables': ['spacecraft_overpass_time_utc'],
+            },
         },
     },
     'SPL2SMP': {
