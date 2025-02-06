@@ -58,7 +58,7 @@ def process_input(in_data: DataTree, output_file: Path):
             var_dt = DataTree()
             full_var_name = f'{group_name}/{var_name}'
             var_dt[full_var_name] = prepare_variable(in_data[full_var_name], grid_info)
-            # write the output data file.
+            # append variable to output file
             var_dt.to_netcdf(output_file, mode='a')
 
 
