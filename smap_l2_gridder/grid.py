@@ -30,33 +30,36 @@ def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
 
 def process_input(in_data: DataTree, output_file: Path):
     """Process input file to generate gridded output file."""
-    out_data = DataTree()
+    root_dt = DataTree()
 
     short_name = get_collection_shortname(in_data)
 
-    out_data = transfer_metadata(in_data, out_data)
+    root_dt = transfer_metadata(in_data, root_dt)
+    root_dt.to_netcdf(output_file, mode='w')
 
     # Process grids from all top level groups that are not only Metadata
     data_group_names = get_data_groups(in_data)
 
     for group_name in data_group_names:
+        group_dt = DataTree()
+
         grid_info = get_grid_information(in_data, group_name, short_name)
         vars_to_grid = get_target_variables(in_data, group_name, short_name)
 
         # Add coordinates and CRS metadata for this group_name
         x_dim, y_dim = compute_dims(grid_info['target'])
-        out_data[f'{group_name}/crs'] = create_crs(grid_info['target'])
-        out_data[f'{group_name}/x-dim'] = x_dim
-        out_data[f'{group_name}/y-dim'] = y_dim
+        group_dt[f'{group_name}/crs'] = create_crs(grid_info['target'])
+        group_dt[f'{group_name}/x-dim'] = x_dim
+        group_dt[f'{group_name}/y-dim'] = y_dim
+
+        group_dt.to_netcdf(output_file, mode='a')
 
         for var_name in vars_to_grid:
+            var_dt = DataTree()
             full_var_name = f'{group_name}/{var_name}'
-            out_data[full_var_name] = prepare_variable(
-                in_data[full_var_name], grid_info
-            )
-
-    # write the output data file.
-    out_data.to_netcdf(output_file)
+            var_dt[full_var_name] = prepare_variable(in_data[full_var_name], grid_info)
+            # append variable to output file
+            var_dt.to_netcdf(output_file, mode='a')
 
 
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
