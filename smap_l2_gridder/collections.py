@@ -36,13 +36,13 @@ COLLECTION_INFORMATION = {
             'Soil_Moisture_Retrieval_Data': {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M09km'],
-                'dropped_variables': ['tb_time_utc'],
+                'ExcludedScienceVariables': ['tb_time_utc'],
             },
             'Soil_Moisture_Retrieval_Data_Polar': {
                 'row': 'Soil_Moisture_Retrieval_Data_Polar/EASE_row_index',
                 'col': 'Soil_Moisture_Retrieval_Data_Polar/EASE_column_index',
                 **GRIDS['N09km'],
-                'dropped_variables': ['tb_time_utc'],
+                'ExcludedScienceVariables': ['tb_time_utc'],
             },
         },
     },
@@ -52,13 +52,13 @@ COLLECTION_INFORMATION = {
             'Soil_Moisture_Retrieval_Data': {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M09km'],
-                'dropped_variables': ['spacecraft_overpass_time_utc'],
+                'ExcludedScienceVariables': ['spacecraft_overpass_time_utc'],
             },
             'Soil_Moisture_Retrieval_Data_3km': {
                 'row': 'Soil_Moisture_Retrieval_Data_3km/EASE_row_index_3km',
                 'col': 'Soil_Moisture_Retrieval_Data_3km/EASE_column_index_3km',
                 **GRIDS['M03km'],
-                'dropped_variables': ['spacecraft_overpass_time_utc'],
+                'ExcludedScienceVariables': ['spacecraft_overpass_time_utc'],
             },
         },
     },
@@ -67,7 +67,11 @@ COLLECTION_INFORMATION = {
         'data_groups': {
             'Ancillary_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
             'Radar_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
-            'Soil_Moisture_Retrieval_Data': {**STANDARD_LOCATIONS, **GRIDS['M03km']},
+            'Soil_Moisture_Retrieval_Data': {
+                **STANDARD_LOCATIONS,
+                **GRIDS['M03km'],
+                'ExcludedScienceVariables': ['spacecraft_overpass_time_utc'],
+            },
         },
     },
     'SPL2SMP': {
@@ -116,11 +120,11 @@ def get_collection_group_info(short_name: str, group: str) -> dict:
     return group_info
 
 
-def get_dropped_variables(short_name: str, group: str) -> set[str]:
+def get_excluded_science_variables(short_name: str, group: str) -> set[str]:
     """Return a set of variables to be excluded from the processed file."""
     try:
         info = get_collection_group_info(short_name, group)
-        dropped_vars = info['dropped_variables']
+        dropped_vars = info['ExcludedScienceVariables']
         return set(dropped_vars)
     except KeyError:
         return set()
