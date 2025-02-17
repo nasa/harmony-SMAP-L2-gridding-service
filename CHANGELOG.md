@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] - 2025-02-17
+
+### Added
+
+- Adds support for SPL2SMP ([SMAP L2 Radiometer Half-Orbit 36 km EASE-Grid Soil Moisture, Version 9](https://nsidc.org/data/spl2smp/versions/9)).
+  The 2D input variables `landcover_class` and `landcover_class_fraction` are separated into 3 1D variables before gridding.
+
+
 ## [v0.2.1] - 2025-02-06
 
 ### Changed

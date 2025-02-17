@@ -153,7 +153,9 @@ def get_target_variables(
     return set(in_data[group].data_vars) - set(excluded_science_variables)
 
 
-def flatten_2d_data(in_dt: DataTree, short_name: str) -> DataTree:
+def flatten_2d_data(
+    in_dt: DataTree | DataArray, short_name: str
+) -> DataTree | DataArray:
     """Convert 2D variables in a DataTree into separate 1D components.
 
     For each 2D variable found, splits it into 3 separate 1D variables
@@ -167,13 +169,15 @@ def flatten_2d_data(in_dt: DataTree, short_name: str) -> DataTree:
     Returns:
         Modified DataTree with 2D variables split into 1D components
     """
-    for var_name in get_flattened_variables(short_name, in_dt.name):
+    for var_name in get_flattened_variables(short_name, str(in_dt.name)):
         in_dt = split_2d_variable(in_dt, var_name)
 
     return in_dt
 
 
-def split_2d_variable(in_dt: DataTree, var_name: str) -> DataTree:
+def split_2d_variable(
+    in_dt: DataTree | DataArray, var_name: str
+) -> DataTree | DataArray:
     """Split a 2D Variable in a Datatree into three 1D variables.
 
     Takes a variable with shape (N, 3) and splits it into three variables
@@ -197,7 +201,7 @@ def split_2d_variable(in_dt: DataTree, var_name: str) -> DataTree:
         raise InvalidVariableError(f'Variable {var_name} must have shape (N, 3)')
 
     for idx in range(3):
-        out_dt[f'{var_name}_{idx + 1}'] = multi_var[:, idx]
+        out_dt[f'{var_name}_{idx + 1}'] = DataArray(multi_var.data[:, idx])
 
     del out_dt[var_name]
     return out_dt
