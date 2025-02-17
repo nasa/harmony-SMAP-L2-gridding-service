@@ -9,7 +9,7 @@ import xarray as xr
 from xarray import DataArray, DataTree
 
 from smap_l2_gridder import grid
-from smap_l2_gridder.exceptions import InvalidCollectionError, InvalidVariableError
+from smap_l2_gridder.exceptions import InvalidCollectionError, InvalidVariableShape
 from smap_l2_gridder.grid import (
     default_fill_value,
     flatten_2d_data,
@@ -300,7 +300,7 @@ def test_split_2d_variable_invalid_shapes(size):
     dt = DataTree()
     dt['test_var'] = DataArray(np.random.randint(0, 101, size=size))
 
-    with pytest.raises(InvalidVariableError):
+    with pytest.raises(InvalidVariableShape):
         split_2d_variable(dt, 'test_var')
 
 

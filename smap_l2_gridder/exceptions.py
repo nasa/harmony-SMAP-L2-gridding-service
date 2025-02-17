@@ -17,5 +17,5 @@ class InvalidCollectionError(SMAPL2GridderError):
     """Raised when attempting operations on invalid collections."""
 
 
-class InvalidVariableError(SMAPL2GridderError):
+class InvalidVariableShape(SMAPL2GridderError):
     """Raised when attempting operations on invalid variables."""

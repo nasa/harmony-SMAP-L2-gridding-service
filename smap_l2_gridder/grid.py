@@ -18,7 +18,7 @@ from .collections import (
     get_flattened_variables,
 )
 from .crs import compute_dims, create_crs, parse_gpd_file
-from .exceptions import InvalidVariableError
+from .exceptions import InvalidVariableShape
 
 
 def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
@@ -192,13 +192,13 @@ def split_2d_variable(
         Copy of the DataTree with the 2D variable replaced by three 1D variables
 
     Raises:
-        InvalidVariableError: If input variable has incorrect shape.
+        InvalidVariableShape: If input variable has incorrect shape.
     """
     out_dt = in_dt.copy()
     multi_var = in_dt[var_name]
 
     if len(multi_var.shape) != 2 or multi_var.shape[1] != 3:
-        raise InvalidVariableError(f'Variable {var_name} must have shape (N, 3)')
+        raise InvalidVariableShape(f'Variable {var_name} must have shape (N, 3)')
 
     for idx in range(3):
         out_dt[f'{var_name}_{idx + 1}'] = DataArray(multi_var.data[:, idx])
