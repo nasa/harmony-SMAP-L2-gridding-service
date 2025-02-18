@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Adds support for SPL2SMP ([SMAP L2 Radiometer Half-Orbit 36 km EASE-Grid Soil Moisture, Version 9](https://nsidc.org/data/spl2smp/versions/9)).
   The 2D input variables `landcover_class` and `landcover_class_fraction` are separated into 3 1D variables before gridding.
+  `tb_time_utc` is dropped in the output and can be derived from `tb_time_seconds`
 
 
 ## [v0.2.1] - 2025-02-06

@@ -80,6 +80,7 @@ COLLECTION_INFORMATION = {
             'Soil_Moisture_Retrieval_Data': {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M36km'],
+                'ExcludedScienceVariables': ['tb_time_utc'],
                 'FlattenedVariables': ['landcover_class', 'landcover_class_fraction'],
             }
         },
