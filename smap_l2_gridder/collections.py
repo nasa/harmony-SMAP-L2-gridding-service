@@ -80,6 +80,8 @@ COLLECTION_INFORMATION = {
             'Soil_Moisture_Retrieval_Data': {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M36km'],
+                'ExcludedScienceVariables': ['tb_time_utc'],
+                'FlattenedVariables': ['landcover_class', 'landcover_class_fraction'],
             }
         },
     },
@@ -126,5 +128,15 @@ def get_excluded_science_variables(short_name: str, group: str) -> set[str]:
         info = get_collection_group_info(short_name, group)
         dropped_vars = info['ExcludedScienceVariables']
         return set(dropped_vars)
+    except KeyError:
+        return set()
+
+
+def get_flattened_variables(short_name: str, group: str) -> set[str]:
+    """Return a set of variables to be flattened from the input file."""
+    try:
+        info = get_collection_group_info(short_name, group)
+        flattened_vars = info['FlattenedVariables']
+        return set(flattened_vars)
     except KeyError:
         return set()

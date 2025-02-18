@@ -7,6 +7,7 @@ from smap_l2_gridder.collections import (
     get_collection_group_info,
     get_collection_info,
     get_excluded_science_variables,
+    get_flattened_variables,
 )
 
 
@@ -28,6 +29,7 @@ def mock_collection_info():
                     'col': 'path/to/col',
                     'gpd': 'test.gpd',
                     'epsg': 'EPSG:test',
+                    'FlattenedVariables': ['smashed-var1', 'smashed-var2'],
                 },
             },
         },
@@ -113,3 +115,17 @@ def test_get_excluded_science_variables(mocker, mock_collection_info):
         match='No collection information for invalid_collection_name',
     ):
         get_excluded_science_variables('invalid_collection_name', 'group')
+
+
+def test_get_flattened_variables(mocker, mock_collection_info):
+    """Test checking configuration for flatting."""
+    mocker.patch(
+        'smap_l2_gridder.collections.get_all_information',
+        return_value=mock_collection_info,
+    )
+
+    assert get_flattened_variables('sample_collection', 'sample_group_name') == set()
+
+    assert get_flattened_variables('sample_collection', 'another_group_name') == set(
+        ['smashed-var1', 'smashed-var2']
+    )

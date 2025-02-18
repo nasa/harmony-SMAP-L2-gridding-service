@@ -15,8 +15,10 @@ from .collections import (
     get_collection_group_info,
     get_collection_info,
     get_excluded_science_variables,
+    get_flattened_variables,
 )
 from .crs import compute_dims, create_crs, parse_gpd_file
+from .exceptions import InvalidVariableShape
 
 
 def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
@@ -44,6 +46,7 @@ def process_input(in_data: DataTree, output_file: Path):
         group_dt = DataTree()
 
         grid_info = get_grid_information(in_data, group_name, short_name)
+        in_data[group_name] = flatten_2d_data(in_data[group_name], short_name)
         vars_to_grid = get_target_variables(in_data, group_name, short_name)
 
         # Add coordinates and CRS metadata for this group_name
@@ -148,6 +151,60 @@ def get_target_variables(
     """Get variables to be regridded in the output file."""
     excluded_science_variables = get_excluded_science_variables(short_name, group)
     return set(in_data[group].data_vars) - set(excluded_science_variables)
+
+
+def flatten_2d_data(
+    in_dt: DataTree | DataArray, short_name: str
+) -> DataTree | DataArray:
+    """Convert 2D variables in a DataTree into separate 1D components.
+
+    For each 2D variable found, splits it into 3 separate 1D variables
+    representing its components. If no 2D variables exist, returns the
+    input DataTree unmodified.
+
+    Args:
+        in_dt: Input DataTree containing 2D variables
+        short_name: collection used to identify 2D variables in configuration
+
+    Returns:
+        Modified DataTree with 2D variables split into 1D components
+    """
+    for var_name in get_flattened_variables(short_name, str(in_dt.name)):
+        in_dt = split_2d_variable(in_dt, var_name)
+
+    return in_dt
+
+
+def split_2d_variable(
+    in_dt: DataTree | DataArray, var_name: str
+) -> DataTree | DataArray:
+    """Split a 2D Variable in a Datatree into three 1D variables.
+
+    Takes a variable with shape (N, 3) and splits it into three variables
+    with shape (N,), preserving metadata. The new variables are named
+    {var_name}_1, {var_name}_2, and {var_name}_3.
+
+    Args:
+        in_dt: Input DataTree containing the 2D variable
+        var_name: Name of the variable to split
+
+    Returns:
+        Copy of the DataTree with the 2D variable replaced by three 1D variables
+
+    Raises:
+        InvalidVariableShape: If input variable has incorrect shape.
+    """
+    out_dt = in_dt.copy()
+    multi_var = in_dt[var_name]
+
+    if len(multi_var.shape) != 2 or multi_var.shape[1] != 3:
+        raise InvalidVariableShape(f'Variable {var_name} must have shape (N, 3)')
+
+    for idx in range(3):
+        out_dt[f'{var_name}_{idx + 1}'] = DataArray(multi_var.data[:, idx])
+
+    del out_dt[var_name]
+    return out_dt
 
 
 def get_grid_information(in_dt: DataTree, group: str, short_name: str) -> dict:
