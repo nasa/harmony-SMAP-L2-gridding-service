@@ -118,7 +118,7 @@ def test_get_excluded_science_variables(mocker, mock_collection_info):
 
 
 def test_get_flattened_variables(mocker, mock_collection_info):
-    """Test checking configuration for flatting."""
+    """Test checking configuration for flattening."""
     mocker.patch(
         'smap_l2_gridder.collections.get_all_information',
         return_value=mock_collection_info,
