@@ -8,9 +8,11 @@ import pytest
 import xarray as xr
 from xarray import DataArray, DataTree
 
-from smap_l2_gridder.exceptions import InvalidCollectionError
+from smap_l2_gridder import grid
+from smap_l2_gridder.exceptions import InvalidCollectionError, InvalidVariableShape
 from smap_l2_gridder.grid import (
     default_fill_value,
+    flatten_2d_data,
     get_collection_shortname,
     get_grid_information,
     get_target_grid_information,
@@ -19,6 +21,7 @@ from smap_l2_gridder.grid import (
     locate_row_and_column_for_group,
     prepare_variable,
     process_input,
+    split_2d_variable,
     transfer_metadata,
     variable_fill_value,
 )
@@ -232,6 +235,83 @@ def test_get_target_grid_information(group, short_name, expected, mocker):
 
     get_target_grid_information(group, short_name)
     parse_gpd_file_mock.assert_called_with(expected)
+
+
+@pytest.fixture
+def dt_2d():
+    """Create a basic datatree for testing."""
+    dt = DataTree()
+    dt['test_var'] = DataArray(np.random.randint(1, 101, size=(5, 3)))
+    dt['test_other_var'] = DataArray(np.random.randint(1, 101, size=(5, 3)))
+    return dt
+
+
+@pytest.fixture
+def split_2d_variable_spy(mocker):
+    """Spy on the split_2d_variable function."""
+    return mocker.spy(grid, 'split_2d_variable')
+
+
+def test_flatten_2d_data(dt_2d, split_2d_variable_spy, mocker):
+    """Test single variable flattened."""
+    mocker.patch(
+        'smap_l2_gridder.grid.get_flattened_variables', return_value={'test_var'}
+    )
+    _ = flatten_2d_data(dt_2d, 'short_name')
+
+    split_2d_variable_spy.assert_called_once_with(dt_2d, 'test_var')
+
+
+def test_multiple_variables_flattened(dt_2d, split_2d_variable_spy, mocker):
+    """Test more than one variable can be flattened."""
+    mocker.patch(
+        'smap_l2_gridder.grid.get_flattened_variables',
+        return_value={'test_var', 'test_other_var'},
+    )
+    _ = flatten_2d_data(dt_2d, 'short_name')
+    split_2d_variable_spy.assert_has_calls(
+        [call(dt_2d, 'test_var'), call(dt_2d, 'test_other_var')], any_order=True
+    )
+
+
+def test_no_flattening(dt_2d, split_2d_variable_spy, mocker):
+    """Check files without flattening are not flattened."""
+    mocker.patch('smap_l2_gridder.grid.get_flattened_variables', return_value=set())
+    _ = flatten_2d_data(dt_2d, 'short_name')
+    split_2d_variable_spy.assert_not_called()
+
+
+def test_split_2d_variable():
+    """Test variable data splits correctly."""
+    data = np.random.randint(0, 101, size=(6, 3))
+    var = DataArray(data, dims=['phony_dim_0', 'phony_dim_1'])
+    dt = DataTree()
+    dt['test_var'] = var
+
+    expected_1 = data[:, 0]
+    expected_2 = data[:, 1]
+    expected_3 = data[:, 2]
+
+    result = split_2d_variable(dt, 'test_var')
+
+    assert 'test_var_1' in result
+    assert 'test_var_2' in result
+    assert 'test_var_3' in result
+    assert 'test_var' not in result
+
+    np.testing.assert_array_equal(result['test_var_1'].data, expected_1)
+    np.testing.assert_array_equal(result['test_var_2'].data, expected_2)
+    np.testing.assert_array_equal(result['test_var_3'].data, expected_3)
+
+
+@pytest.mark.parametrize('size', [(6, 4), (1, 7, 3)])
+def test_split_2d_variable_invalid_shapes(size):
+    """Test error cases when bad variable shapes passed."""
+    dt = DataTree()
+    dt['test_var'] = DataArray(np.random.randint(0, 101, size=size))
+
+    with pytest.raises(InvalidVariableShape):
+        split_2d_variable(dt, 'test_var')
 
 
 @pytest.mark.parametrize(
