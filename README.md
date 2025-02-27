@@ -29,6 +29,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 ├── README.md
 ├── 📁 bin
 ├── 📁 docker
+├── 📁 docs
 ├── 📁 harmony_service
 ├── pip_requirements.txt
 ├── pyproject.toml
@@ -42,6 +43,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 * `README.md` - This file, containing guidance on developing the library and service.
 * `bin` - A directory containing utility scripts to build the service and test images. A script to extract the release notes for the most recent version, as contained in `CHANGELOG.md` is also in this directory.
 * `docker` - A directory containing the Dockerfiles for the service and test images. It also contains `service_version.txt`, which contains the semantic version number of the library and service image. Update this file with a new version to trigger a release.
+* `docs` - A directory containing an example notebook demonstrating how to use the service and examining the service output data.
 *  `harmony_service` - A directory containing the Harmony Service specific python code. `adapter.py` contains the `SMAPL2GridderAdapter` class that is invoked by calls to the Harmony service.
 * `pip_requirements.txt` - Contains a list of python packages needed to run the service.
 * `pyproject.toml` - Configuration file used by packaging tools, and other tools such as linters, type checkers, etc.
