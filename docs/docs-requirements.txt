@@ -4,3 +4,4 @@ netCDF4==1.7.2
 numpy==2.2.3
 matplotlib==3.10.0
 Cartopy==0.24.1
+harmony-py==1.0.0
