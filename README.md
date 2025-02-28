@@ -2,7 +2,7 @@
 
 This repository contains the code for the Harmony-SMAP-L2-Gridding-Service, which is a python service that transforms NASA level 2 gridded trajectory data into gridded NetCDF4-CF output files.
 
-This code currently works on `SPL2SMP_E`, and `SPL2SMAP` data and will be adapted for other SMAP collections [`SPL2SMP`,`SPL2SMA`] of gridded trajectory data.
+This code currently works on `SPL2SMP_E`, and `SPL2SMAP`, `SPL2SMP`, and `SPL2SMA` collections of gridded trajectory data.
 
 
 ## Transforming Data
@@ -10,6 +10,7 @@ This code currently works on `SPL2SMP_E`, and `SPL2SMAP` data and will be adapte
 The logic of transforming data is contained in the `smap_l2_gridder` directory. It reads NASA L2 Gridded trajectory data and writes output NetCDF-CF files with the trajecotry style data correctly populated into EASE2 grids.
 
 ### Commandline invocation
+
 To run the regridder on an input file.  Create an isolated python 3.12 environment using packages from the `pip_requirements.txt` file and then from the commandline run:
 
 ```python
@@ -28,6 +29,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 ├── README.md
 ├── 📁 bin
 ├── 📁 docker
+├── 📁 docs
 ├── 📁 harmony_service
 ├── pip_requirements.txt
 ├── pyproject.toml
@@ -41,6 +43,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 * `README.md` - This file, containing guidance on developing the library and service.
 * `bin` - A directory containing utility scripts to build the service and test images. A script to extract the release notes for the most recent version, as contained in `CHANGELOG.md` is also in this directory.
 * `docker` - A directory containing the Dockerfiles for the service and test images. It also contains `service_version.txt`, which contains the semantic version number of the library and service image. Update this file with a new version to trigger a release.
+* `docs` - A directory containing an example notebook demonstrating how to use the service and examining the service output data.
 *  `harmony_service` - A directory containing the Harmony Service specific python code. `adapter.py` contains the `SMAPL2GridderAdapter` class that is invoked by calls to the Harmony service.
 * `pip_requirements.txt` - Contains a list of python packages needed to run the service.
 * `pyproject.toml` - Configuration file used by packaging tools, and other tools such as linters, type checkers, etc.
@@ -78,9 +81,9 @@ It is also possible to run the test scripts directly (without docker) by just ru
 The `tests/run_tests.sh` script will also generate a coverage report, rendered
 in HTML, and scan the code with `pylint`.
 
-Currently, the `pytest` suite is run automatically within a GitHub workflow
-as part of a CI/CD pipeline. These tests are run for all changes made in a PR
-against the `main` branch. The tests must pass in order to merge the PR.
+The `pytest` suite is run automatically within a GitHub workflow as part of a
+CI/CD pipeline. These tests are run for all changes made in a PR against the
+`main` branch. The tests must pass in order to merge the PR.
 
 ## `pre-commit` hooks
 
@@ -94,7 +97,7 @@ checks that enforce coding standard best practices. These include:
 * [black](https://black.readthedocs.io/en/stable/index.html) Python code
   formatting checks.
 
-To enable these checks:
+To enable these checks locally:
 
 ```bash
 # Install pre-commit Python package:
@@ -144,7 +147,7 @@ the workflows in the `.github/workflows` directory:
 A release consists of a new Docker image for the Harmony SMAP L2 gridding service
 published to github's container repository.
 
-A release is made automatically when a commit to the main branch contains a
+A release is made automatically when a commit to the `main` branch contains a
 changes in the `docker/service_version.txt` file, see the [publish_release](#release-workflow) workflow in the CI/CD section above.
 
 Before **merging** a PR that will trigger a release, ensure these two files are updated:

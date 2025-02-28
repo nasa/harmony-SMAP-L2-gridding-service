@@ -2,3 +2,6 @@
 /.coverage
 /reports/
 /workdir/
+/docs/.ipynb_checkpoints/
+/docs/.python-version
+/docs/.virtual_documents/
