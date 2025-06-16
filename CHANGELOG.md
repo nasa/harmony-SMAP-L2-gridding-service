@@ -5,11 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased] - 2025-02-27
+## [v0.4.0] - 2025-06-16
 
 ### Added
 
 - Adds example notebook to demonstrate the service and examine the output data.
+
+### Fixed
+
+- Fixes bug for SPL2SMP requests that occurred when a SMAP-L2-Gridding request was preceeded by a HOSS variable subset request ([DAS-2383](https://bugs.earthdata.nasa.gov/browse/DAS-2383)).  Two dimensional variables in the collection are now checked to ensure they are in the input file before flattening them.
 
 ## [v0.3.0] - 2025-02-17
 
@@ -62,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code and configuration to wrap gridding logic into a Harmony Service [#3](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/3 )
 - GitHub actions CI configuration [#4](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/4 )
 
+[v0.4.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.4.0
 [v0.3.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.3.0
 [v0.2.1]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.2.1
 [v0.2.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.2.0
