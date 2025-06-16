@@ -161,16 +161,16 @@ def get_target_variables(
 def separate_2d_variables(
     in_dt: DataTree, short_name: str, var_list: set[str]
 ) -> tuple[set[str], set[str] | None]:
-    """Split variables into normal and flattened.
+    """Split variables into 1D and 2D (to be flattened).
 
-    Because SMAP L2 data may come from HOSS and be variable subsetted, we need
-    to make sure that the variables are actually present before sending them
-    off to be flattened.
+    Since SMAP L2 data may come from HOSS and be variable subsetted, we need to
+    make sure that the variables are actually present before sending them off
+    to be flattened.
 
     From the initial set of variables for this group, we return two simple set
-    operations.  the normal variables are just the list of all variables less
-    those that should be flattened, and then the flattend variables are the
-    ones that can be flattened and are also present in the variable list.
+    operations.  The 1D variables is just the list of all variables less those
+    that should be flattened. Then the flattend variables are those that can be
+    flattened and are also present in the variable list.
 
     """
     vars_to_flatten = get_flattened_variables(short_name, str(in_dt.name))
