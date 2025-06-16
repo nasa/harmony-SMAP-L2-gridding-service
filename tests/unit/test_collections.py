@@ -24,7 +24,7 @@ def mock_collection_info():
                     'gpd': 'test.gpd',
                     'epsg': 'EPSG:test',
                 },
-                'another_group_name': {
+                'group_with_flattened_vars': {
                     'row': 'path/to/row',
                     'col': 'path/to/col',
                     'gpd': 'test.gpd',
@@ -124,8 +124,17 @@ def test_get_flattened_variables(mocker, mock_collection_info):
         return_value=mock_collection_info,
     )
 
-    assert get_flattened_variables('sample_collection', 'sample_group_name') == set()
-
-    assert get_flattened_variables('sample_collection', 'another_group_name') == set(
-        ['smashed-var1', 'smashed-var2']
+    assert (
+        get_flattened_variables('sample_collection', 'sample_group_name', {'anything'})
+        == set()
     )
+
+    assert get_flattened_variables(
+        'sample_collection',
+        'group_with_flattened_vars',
+        {'anything', 'smashed-var1', 'smashed-var2'},
+    ) == {'smashed-var1', 'smashed-var2'}
+
+    assert get_flattened_variables(
+        'sample_collection', 'group_with_flattened_vars', {'anything', 'smashed-var2'}
+    ) == {'smashed-var2'}
