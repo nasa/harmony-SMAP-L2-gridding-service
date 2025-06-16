@@ -46,8 +46,13 @@ def process_input(in_data: DataTree, output_file: Path):
         group_dt = DataTree()
 
         grid_info = get_grid_information(in_data, group_name, short_name)
-        in_data[group_name] = flatten_2d_data(in_data[group_name], short_name)
         vars_to_grid = get_target_variables(in_data, group_name, short_name)
+        vars_to_grid, vars_to_flatten_and_grid = separate_2d_variables(
+            in_data[group_name], short_name, vars_to_grid
+        )
+        in_data[group_name] = flatten_2d_data(
+            in_data[group_name], vars_to_flatten_and_grid
+        )
 
         # Add coordinates and CRS metadata for this group_name
         x_dim, y_dim = compute_dims(grid_info['target'])
@@ -153,8 +158,27 @@ def get_target_variables(
     return set(in_data[group].data_vars) - set(excluded_science_variables)
 
 
+def separate_2d_variables(
+    in_dt: DataTree, short_name: str, var_list: set[str]
+) -> tuple[set[str], set[str] | None]:
+    """Split variables into normal and flattened.
+
+    Because SMAP L2 data may come from HOSS and be variable subsetted, we need
+    to make sure that the variables are actually present before sending them
+    off to be flattened.
+
+    From the initial set of variables for this group, we return two simple set
+    operations.  the normal variables are just the list of all variables less
+    those that should be flattened, and then the flattend variables are the
+    ones that can be flattened and are also present in the variable list.
+
+    """
+    vars_to_flatten = get_flattened_variables(short_name, str(in_dt.name))
+    return var_list - vars_to_flatten, vars_to_flatten & var_list
+
+
 def flatten_2d_data(
-    in_dt: DataTree | DataArray, short_name: str
+    in_dt: DataTree | DataArray, variables_to_flatten: Iterable
 ) -> DataTree | DataArray:
     """Convert 2D variables in a DataTree into separate 1D components.
 
@@ -164,12 +188,12 @@ def flatten_2d_data(
 
     Args:
         in_dt: Input DataTree containing 2D variables
-        short_name: collection used to identify 2D variables in configuration
+        variables_to_flatten: set of 2D variable names that need flattening
 
     Returns:
         Modified DataTree with 2D variables split into 1D components
     """
-    for var_name in get_flattened_variables(short_name, str(in_dt.name)):
+    for var_name in variables_to_flatten:
         in_dt = split_2d_variable(in_dt, var_name)
 
     return in_dt

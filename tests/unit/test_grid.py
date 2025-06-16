@@ -21,6 +21,7 @@ from smap_l2_gridder.grid import (
     locate_row_and_column_for_group,
     prepare_variable,
     process_input,
+    separate_2d_variables,
     split_2d_variable,
     transfer_metadata,
     variable_fill_value,
@@ -252,33 +253,89 @@ def split_2d_variable_spy(mocker):
     return mocker.spy(grid, 'split_2d_variable')
 
 
-def test_flatten_2d_data(dt_2d, split_2d_variable_spy, mocker):
+def test_flatten_2d_data(dt_2d, split_2d_variable_spy):
     """Test single variable flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables', return_value={'test_var'}
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
-
+    _ = flatten_2d_data(dt_2d, {'test_var'})
     split_2d_variable_spy.assert_called_once_with(dt_2d, 'test_var')
 
 
 def test_multiple_variables_flattened(dt_2d, split_2d_variable_spy, mocker):
     """Test more than one variable can be flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables',
-        return_value={'test_var', 'test_other_var'},
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
+    _ = flatten_2d_data(dt_2d, {'test_var', 'test_other_var'})
     split_2d_variable_spy.assert_has_calls(
         [call(dt_2d, 'test_var'), call(dt_2d, 'test_other_var')], any_order=True
     )
 
 
-def test_no_flattening(dt_2d, split_2d_variable_spy, mocker):
+def test_no_flattening(dt_2d, split_2d_variable_spy):
     """Check files without flattening are not flattened."""
-    mocker.patch('smap_l2_gridder.grid.get_flattened_variables', return_value=set())
-    _ = flatten_2d_data(dt_2d, 'short_name')
+    _ = flatten_2d_data(dt_2d, set())
     split_2d_variable_spy.assert_not_called()
+
+
+@pytest.fixture
+def mock_get_flattened(mocker):
+    """Return patched get_flattened_variables for testing."""
+    return mocker.patch('smap_l2_gridder.grid.get_flattened_variables')
+
+
+@pytest.fixture
+def mock_dt(mocker):
+    """Ensure dt.name has a value in separate_2d_variables tests."""
+    dt = mocker.Mock()
+    dt.name = 'anything'
+    return dt
+
+
+def test_no_variables_to_flatten(mock_get_flattened, mock_dt):
+    """Test when get_flattened_variables returns empty set."""
+    mock_get_flattened.return_value = set()
+
+    var_list = {'albedo', 'bulk_density', 'soil_moisture'}
+
+    normal_vars, flattened_vars = separate_2d_variables(mock_dt, 'short_name', var_list)
+
+    assert normal_vars == {'albedo', 'bulk_density', 'soil_moisture'}
+    assert flattened_vars == set()
+
+
+def test_all_variables_to_flatten_in_var_list(mock_get_flattened, mock_dt):
+    """Test when get_flattened_variables returns empty set."""
+    flattened = {'flatten_1', 'flatten_2'}
+    mock_get_flattened.return_value = flattened
+
+    var_list = {'albedo', 'bulk_density', 'soil_moisture', 'flatten_1', 'flatten_2'}
+
+    normal_vars, flattened_vars = separate_2d_variables(mock_dt, 'short_name', var_list)
+
+    assert normal_vars == {'albedo', 'bulk_density', 'soil_moisture'}
+    assert flattened_vars == flattened
+
+
+def test_one_variable_to_flatten_in_var_list(mock_get_flattened, mock_dt):
+    """Test when get_flattened_variables returns empty set."""
+    flattened = {'flatten_1', 'flatten_2'}
+    mock_get_flattened.return_value = flattened
+
+    var_list = {'albedo', 'bulk_density', 'soil_moisture', 'flatten_1'}
+
+    normal_vars, flattened_vars = separate_2d_variables(mock_dt, 'short_name', var_list)
+
+    assert normal_vars == {'albedo', 'bulk_density', 'soil_moisture'}
+    assert flattened_vars == {'flatten_1'}
+
+
+def test_no_variables_to_flatten_in_var_list(mock_get_flattened, mock_dt):
+    """Test when get_flattened_variables returns empty set."""
+    flattened = {'flatten_1', 'flatten_2'}
+    mock_get_flattened.return_value = flattened
+
+    var_list = {'albedo', 'bulk_density', 'soil_moisture'}
+
+    normal_vars, flattened_vars = separate_2d_variables(mock_dt, 'short_name', var_list)
+
+    assert normal_vars == {'albedo', 'bulk_density', 'soil_moisture'}
+    assert flattened_vars == set()
 
 
 def test_split_2d_variable():
