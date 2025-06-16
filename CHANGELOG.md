@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixes bug for SPL2SMP requests that occurred when a SMAP-L2-Gridding request was preceeded by a HOSS variable subset request ([DAS-2383](https://bugs.earthdata.nasa.gov/browse/DAS-2383)).  Two dimensional variables in the collection are now checked to ensure they are in the input file before we try to flatten them.
+- Fixes bug for SPL2SMP requests that occurred when a SMAP-L2-Gridding request was preceeded by a HOSS variable subset request ([DAS-2383](https://bugs.earthdata.nasa.gov/browse/DAS-2383)).  Two dimensional variables in the collection are now checked to ensure they are in the input file before flattening them.
 
 ## [v0.3.0] - 2025-02-17
 
