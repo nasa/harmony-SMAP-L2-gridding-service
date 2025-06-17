@@ -132,7 +132,9 @@ def get_excluded_science_variables(short_name: str, group: str) -> set[str]:
         return set()
 
 
-def get_flattened_variables(short_name: str, name: str, var_list: set[str]) -> set[str]:
+def get_flattened_variables(
+    short_name: str, group_name: str, var_list: set[str]
+) -> set[str]:
     """Return a set of variables to be flattened from the input file.
 
     Returns the list of variables configured to be flattened that are also
@@ -140,7 +142,7 @@ def get_flattened_variables(short_name: str, name: str, var_list: set[str]) -> s
 
     """
     try:
-        info = get_collection_group_info(short_name, name)
+        info = get_collection_group_info(short_name, group_name)
         flattened_vars = info['FlattenedVariables']
         return set(flattened_vars) & var_list
     except KeyError:
