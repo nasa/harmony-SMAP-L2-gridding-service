@@ -169,7 +169,11 @@ def flatten_2d_data(
     Returns:
         Modified DataTree with 2D variables split into 1D components
     """
-    for var_name in get_flattened_variables(short_name, str(in_dt.name)):
+    for var_name in get_flattened_variables(
+        short_name,
+        str(in_dt.name),
+        set(in_dt.variables),  # type: ignore[arg-type]
+    ):
         in_dt = split_2d_variable(in_dt, var_name)
 
     return in_dt
