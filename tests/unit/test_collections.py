@@ -139,7 +139,7 @@ def test_get_flattened_variables_no_flattening_available(mock_get_all_informatio
 
 
 def test_get_flattened_variables_flattening_available(mock_get_all_information):
-    """Test for vars flattend and in the source file."""
+    """Flattened variables configured and both variables are in source file."""
     actual_flattening = get_flattened_variables(
         'sample_collection',
         'group_with_flattened_vars',
@@ -151,7 +151,7 @@ def test_get_flattened_variables_flattening_available(mock_get_all_information):
 def test_get_flattened_variables_flattening_available_missing_in_source(
     mock_get_all_information,
 ):
-    """Test multiple flattening possible, only one in source."""
+    """Test multiple flattening configured, only one in source."""
     actual_flattening = get_flattened_variables(
         'sample_collection', 'group_with_flattened_vars', {'anything', 'smashed-var2'}
     )
