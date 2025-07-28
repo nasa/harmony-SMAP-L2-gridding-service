@@ -7,7 +7,6 @@ from smap_l2_gridder.collections import (
     get_collection_group_info,
     get_collection_info,
     get_excluded_science_variables,
-    get_flattened_variables,
 )
 
 
@@ -29,7 +28,6 @@ def mock_collection_info():
                     'col': 'path/to/col',
                     'gpd': 'test.gpd',
                     'epsg': 'EPSG:test',
-                    'FlattenedVariables': ['smashed-var1', 'smashed-var2'],
                 },
             },
         },
@@ -128,43 +126,3 @@ def test_get_excluded_science_variables_no_collections(mock_get_all_information)
         match='No collection information for invalid_collection_name',
     ):
         get_excluded_science_variables('invalid_collection_name', 'group')
-
-
-def test_get_flattened_variables_no_flattening_available(mock_get_all_information):
-    """Test flattening without any available in config."""
-    actual_flattened = get_flattened_variables(
-        'sample_collection', 'sample_group_name', {'anything'}
-    )
-    assert actual_flattened == set()
-
-
-def test_get_flattened_variables_flattening_available_none_in_source(
-    mock_get_all_information,
-):
-    """Test flattening without any available in source."""
-    actual_flattened = get_flattened_variables(
-        'sample_collection', 'group_with_flattened_vars', {'anything'}
-    )
-    assert actual_flattened == set()
-
-
-def test_get_flattened_variables_flattening_available_and_in_source(
-    mock_get_all_information,
-):
-    """Flattened variables configured and both variables are in source file."""
-    actual_flattening = get_flattened_variables(
-        'sample_collection',
-        'group_with_flattened_vars',
-        {'anything', 'smashed-var1', 'smashed-var2'},
-    )
-    assert actual_flattening == {'smashed-var1', 'smashed-var2'}
-
-
-def test_get_flattened_variables_flattening_available_missing_one_in_source(
-    mock_get_all_information,
-):
-    """Test multiple flattening configured, only one in source."""
-    actual_flattening = get_flattened_variables(
-        'sample_collection', 'group_with_flattened_vars', {'anything', 'smashed-var2'}
-    )
-    assert actual_flattening == {'smashed-var2'}

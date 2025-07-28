@@ -9,13 +9,12 @@ from pathlib import Path
 
 import numpy as np
 from pyproj import CRS
-from xarray import DataArray, DataTree, open_datatree
+from xarray import DataArray, DataTree, concat, open_datatree
 
 from .collections import (
     get_collection_group_info,
     get_collection_info,
     get_excluded_science_variables,
-    get_flattened_variables,
 )
 from .crs import compute_dims, create_crs, parse_gpd_file
 from .exceptions import InvalidVariableShape
@@ -46,7 +45,6 @@ def process_input(in_data: DataTree, output_file: Path):
         group_dt = DataTree()
 
         grid_info = get_grid_information(in_data, group_name, short_name)
-        in_data[group_name] = flatten_2d_data(in_data[group_name], short_name)
         vars_to_grid = get_target_variables(in_data, group_name, short_name)
 
         # Add coordinates and CRS metadata for this group_name
@@ -68,6 +66,7 @@ def process_input(in_data: DataTree, output_file: Path):
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
+    print(grid_data)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
     encoding = {
         '_FillValue': variable_fill_value(var),
@@ -84,6 +83,19 @@ def is_compressible(dtype: np.dtype) -> bool:
 
 
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+    """Regrid the input variable into a grid using the grid_info."""
+    if is_1D_var(var):
+        return grid_1D_variable(var, grid_info)
+
+    if is_2D_var(var):
+        return grid_2D_variable(var, grid_info)
+
+    raise InvalidVariableShape(
+        'SMAP L2 Gridder cannot handle variables with more than 2 dimensions.'
+    )
+
+
+def grid_1D_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Regrid the input 1D variable into a 2D grid using the grid_info."""
     fill_val = variable_fill_value(var)
     grid = np.full(
@@ -101,6 +113,29 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     valid_values = var.data[valid_mask]
     grid[valid_rows, valid_cols] = valid_values
     return DataArray(grid, dims=['y-dim', 'x-dim'])
+
+
+def grid_2D_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+    """Regrid the input 2D variable into a 3D Grid using the grid_info.
+
+    Peel variable into N-1D variables, grid it and recombine the results.
+
+    """
+    var0 = grid_1D_variable(var.loc[:, 0], grid_info)
+    var1 = grid_1D_variable(var.loc[:, 1], grid_info)
+    var2 = grid_1D_variable(var.loc[:, 2], grid_info)
+    combined = concat([var0, var1, var2], 'phony_dim_1')
+    return DataArray(combined, dims=['fake', 'y-dim', 'x-dim'])
+
+
+def is_1D_var(var: DataTree | DataArray) -> bool:
+    """Returns True if the variable has one dimension."""
+    return len(var.dims) == 1
+
+
+def is_2D_var(var: DataTree | DataArray) -> bool:
+    """Returns True if the variable has 2 dimensions."""
+    return len(var.dims) == 2
 
 
 def variable_fill_value(var: DataTree | DataArray) -> np.integer | np.floating | None:
@@ -151,32 +186,6 @@ def get_target_variables(
     """Get variables to be regridded in the output file."""
     excluded_science_variables = get_excluded_science_variables(short_name, group)
     return set(in_data[group].data_vars) - set(excluded_science_variables)
-
-
-def flatten_2d_data(
-    in_dt: DataTree | DataArray, short_name: str
-) -> DataTree | DataArray:
-    """Convert 2D variables in a DataTree into separate 1D components.
-
-    For each 2D variable found, splits it into 3 separate 1D variables
-    representing its components. If no 2D variables exist, returns the
-    input DataTree unmodified.
-
-    Args:
-        in_dt: Input DataTree containing 2D variables
-        short_name: collection used to identify 2D variables in configuration
-
-    Returns:
-        Modified DataTree with 2D variables split into 1D components
-    """
-    for var_name in get_flattened_variables(
-        short_name,
-        str(in_dt.name),
-        set(in_dt.variables),  # type: ignore[arg-type]
-    ):
-        in_dt = split_2d_variable(in_dt, var_name)
-
-    return in_dt
 
 
 def split_2d_variable(

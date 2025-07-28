@@ -81,7 +81,6 @@ COLLECTION_INFORMATION = {
                 **STANDARD_LOCATIONS,
                 **GRIDS['M36km'],
                 'ExcludedScienceVariables': ['tb_time_utc'],
-                'FlattenedVariables': ['landcover_class', 'landcover_class_fraction'],
             }
         },
     },
@@ -128,22 +127,5 @@ def get_excluded_science_variables(short_name: str, group: str) -> set[str]:
         info = get_collection_group_info(short_name, group)
         dropped_vars = info['ExcludedScienceVariables']
         return set(dropped_vars)
-    except KeyError:
-        return set()
-
-
-def get_flattened_variables(
-    short_name: str, group_name: str, var_list: set[str]
-) -> set[str]:
-    """Return a set of variables to be flattened from the input file.
-
-    Returns the list of variables configured to be flattened that are also
-    present in the var list (generated from the source file)
-
-    """
-    try:
-        info = get_collection_group_info(short_name, group_name)
-        flattened_vars = info['FlattenedVariables']
-        return set(flattened_vars) & var_list
     except KeyError:
         return set()

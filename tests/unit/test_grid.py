@@ -12,7 +12,6 @@ from smap_l2_gridder import grid
 from smap_l2_gridder.exceptions import InvalidCollectionError, InvalidVariableShape
 from smap_l2_gridder.grid import (
     default_fill_value,
-    flatten_2d_data,
     get_collection_shortname,
     get_grid_information,
     get_target_grid_information,
@@ -250,35 +249,6 @@ def dt_2d():
 def split_2d_variable_spy(mocker):
     """Spy on the split_2d_variable function."""
     return mocker.spy(grid, 'split_2d_variable')
-
-
-def test_flatten_2d_data(dt_2d, split_2d_variable_spy, mocker):
-    """Test single variable flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables', return_value={'test_var'}
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
-
-    split_2d_variable_spy.assert_called_once_with(dt_2d, 'test_var')
-
-
-def test_multiple_variables_flattened(dt_2d, split_2d_variable_spy, mocker):
-    """Test more than one variable can be flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables',
-        return_value={'test_var', 'test_other_var'},
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
-    split_2d_variable_spy.assert_has_calls(
-        [call(dt_2d, 'test_var'), call(dt_2d, 'test_other_var')], any_order=True
-    )
-
-
-def test_no_flattening(dt_2d, split_2d_variable_spy, mocker):
-    """Check files without flattening are not flattened."""
-    mocker.patch('smap_l2_gridder.grid.get_flattened_variables', return_value=set())
-    _ = flatten_2d_data(dt_2d, 'short_name')
-    split_2d_variable_spy.assert_not_called()
 
 
 def test_split_2d_variable():
