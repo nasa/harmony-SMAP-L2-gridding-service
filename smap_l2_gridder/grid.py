@@ -1,7 +1,9 @@
 """Grid L2G data into encoded EASE Grid output.
 
 L2G data represents a gridded swath in an EASE projected grid.  These are the
-routines to translate the 1D intput arrays into the EASE grid output format
+routines to translate the 1D or 2D input arrays into the EASE grid output
+format.
+
 """
 
 from collections.abc import Iterable
@@ -84,18 +86,18 @@ def is_compressible(dtype: np.dtype) -> bool:
 
 def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Regrid the input variable into a grid using the grid_info."""
-    if is_1D_var(var):
-        return grid_1D_variable(var, grid_info)
+    if is_1d_var(var):
+        return grid_1d_variable(var, grid_info)
 
-    if is_2D_var(var):
-        return grid_2D_variable(var, grid_info)
+    if is_2d_var(var):
+        return grid_2d_variable(var, grid_info)
 
     raise InvalidVariableShape(
         'SMAP L2 Gridder cannot handle variables with more than 2 dimensions.'
     )
 
 
-def grid_1D_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+def grid_1d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Regrid the input 1D variable into a 2D grid using the grid_info."""
     fill_val = variable_fill_value(var)
     grid = np.full(
@@ -115,25 +117,30 @@ def grid_1D_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     return DataArray(grid, dims=['y-dim', 'x-dim'])
 
 
-def grid_2D_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+def grid_2d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Regrid the input 2D variable into a 3D Grid using the grid_info.
 
     Peel variable into N-1D variables, grid it and recombine the results.
 
     """
-    var0 = grid_1D_variable(var.loc[:, 0], grid_info)
-    var1 = grid_1D_variable(var.loc[:, 1], grid_info)
-    var2 = grid_1D_variable(var.loc[:, 2], grid_info)
-    combined = concat([var0, var1, var2], 'phony_dim_1')
-    return DataArray(combined, dims=['fake', 'y-dim', 'x-dim'])
+    if var.shape[0] < var.shape[1]:
+        var = var.T
+
+    num_layers = var.shape[1]
+    grid_layers = [grid_1d_variable(var[:, i], grid_info) for i in range(num_layers)]
+    combined = concat(grid_layers, 'layers')
+    return DataArray(
+        combined.transpose('y-dim', 'x-dim', 'layers'),
+        dims=['y-dim', 'x-dim', 'layers'],
+    )
 
 
-def is_1D_var(var: DataTree | DataArray) -> bool:
+def is_1d_var(var: DataTree | DataArray) -> bool:
     """Returns True if the variable has one dimension."""
     return len(var.dims) == 1
 
 
-def is_2D_var(var: DataTree | DataArray) -> bool:
+def is_2d_var(var: DataTree | DataArray) -> bool:
     """Returns True if the variable has 2 dimensions."""
     return len(var.dims) == 2
 
