@@ -76,20 +76,23 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
         # it's not acting like a bottle neck so I'm not sure what to do. But
         # for now I'll remove this and use mark to skip the test.
 
-        # dt[f'{group}/tb_time_utc'] = DataArray(
-        #     data=np.array(
-        #         [
-        #             '2024-11-06T03:59:27.313Z',
-        #             '2024-11-06T03:59:25.754Z',
-        #             '2024-11-06T03:59:24.374Z',
-        #             '2024-11-06T03:59:22.735Z',
-        #             '2024-11-06T03:59:21.191Z',
-        #         ],
-        #         dtype='<U24',
-        #     ),
-        #     dims=['phony_dim_0'],
-        #     attrs={'long_name': 'Arithmetic average of the acquisition time...'},
-        # )
+        # 2025-07-28 I don't know what changed, but this no longer
+        # bottlenecks. I'm leaving the note above for when it does.
+
+        dt[f'{group}/tb_time_utc'] = DataArray(
+            data=np.array(
+                [
+                    '2024-11-06T03:59:27.313Z',
+                    '2024-11-06T03:59:25.754Z',
+                    '2024-11-06T03:59:24.374Z',
+                    '2024-11-06T03:59:22.735Z',
+                    '2024-11-06T03:59:21.191Z',
+                ],
+                dtype='<U24',
+            ),
+            dims=['phony_dim_0'],
+            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+        )
 
     # Round trip this to a file so that the encoding values are what we see
     # when we read from a NetCDF file.

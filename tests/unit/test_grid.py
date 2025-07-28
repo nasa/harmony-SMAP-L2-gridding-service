@@ -319,7 +319,6 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_column, result)
 
 
-@pytest.mark.skip('Slow fixture')
 def test_grid_variable_string(sample_datatree, sample_grid_info):
     """Test grid_variable function."""
     var = sample_datatree['Soil_Moisture_Retrieval_Data_Polar/tb_time_utc']
