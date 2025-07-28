@@ -68,7 +68,6 @@ def process_input(in_data: DataTree, output_file: Path):
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
     grid_data = grid_variable(var, grid_info)
-    print(grid_data)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
     encoding = {
         '_FillValue': variable_fill_value(var),
