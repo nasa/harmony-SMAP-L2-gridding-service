@@ -340,6 +340,46 @@ def test_grid_variable_string(sample_datatree, sample_grid_info):
         assert actual == expected, f'full comparison {result.data}\n{expected_utc}'
 
 
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+def test_grid_variable_2d(sample_datatree, sample_grid_info):
+    """Test grid_variable function."""
+    var = sample_datatree['Soil_Moisture_Retrieval_Data/landcover_class']
+    result = grid_variable(var, sample_grid_info)
+    print(result)
+    expected_3d = np.full((5, 5, 3), np.float32(-9999.0))
+
+    # The row/col is just the diagonal values but handle layers.
+    for idx in range(len(var[:, 0])):
+        expected_3d[idx, idx, 0] = var.data[idx, 0]
+        expected_3d[idx, idx, 1] = var.data[idx, 1]
+        expected_3d[idx, idx, 2] = var.data[idx, 2]
+
+    assert isinstance(result, DataArray)
+    assert result.dims == ('y-dim', 'x-dim', 'layers')
+    assert result.shape == (5, 5, 3)
+    np.testing.assert_array_almost_equal(expected_3d, result)
+
+
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+def test_grid_variable_2d_transposed(sample_datatree, sample_grid_info):
+    """Test grid_variable function."""
+    var = sample_datatree['Soil_Moisture_Retrieval_Data/landcover_class_transposed']
+    result = grid_variable(var, sample_grid_info)
+    print(result)
+    expected_3d = np.full((5, 5, 3), np.float32(-9999.0))
+
+    # The row/col is just the diagonal values but handle layers
+    for idx in range(len(var[0, :])):
+        expected_3d[idx, idx, 0] = var.data[0, idx]
+        expected_3d[idx, idx, 1] = var.data[1, idx]
+        expected_3d[idx, idx, 2] = var.data[2, idx]
+
+    assert isinstance(result, DataArray)
+    assert result.dims == ('y-dim', 'x-dim', 'layers')
+    assert result.shape == (5, 5, 3)
+    np.testing.assert_array_almost_equal(expected_3d, result)
+
+
 def test_variable_fill_value(mocker):
     """Test variable_fill_value function."""
     # Test with _FillValue in encoding

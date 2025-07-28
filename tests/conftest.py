@@ -139,6 +139,43 @@ def sample_SPL2SMAP_file(tmp_path) -> str:
         },
     )
 
+    dt['Soil_Moisture_Retrieval_Data/landcover_class'] = DataArray(
+        data=np.array(
+            [
+                [15.0, 1.0, 99.0],
+                [14.0, 2.0, 98.0],
+                [13.0, 3.0, 97.0],
+                [12.0, 4.0, 96.0],
+                [11.0, 5.0, 95.0],
+            ],
+            dtype=np.float32,
+        ),
+        dims=['phony_dim_0', 'phony_dim_2'],
+        attrs={
+            'long_name': 'An enumerated type that specifies the most common landcover class in the grid cell based on the IGBP landcover map.',
+            'valid_min': 0.0,
+            'valid_max': 10000000.0,
+            '_FillValue': np.float32(-9999.0),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data/landcover_class_transposed'] = DataArray(
+        data=np.array(
+            [
+                [15.0, 14.0, 13.0, 12.0, 11.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0],
+                [99.0, 98.0, 97.0, 96.0, 95.0],
+            ],
+            dtype=np.float32,
+        ),
+        dims=['phony_dim_2', 'phony_dim_0'],
+        attrs={
+            'long_name': 'An enumerated type that specifies the most common landcover class in the grid cell based on the IGBP landcover map.',
+            'valid_min': 0.0,
+            '_FillValue': np.float32(-9999.0),
+        },
+    )
+
     dt['Soil_Moisture_Retrieval_Data/albedo'] = DataArray(
         data=np.array([0.0009434, 0.00136986, 0.0025, 0.0, -9999.0], dtype=np.float32),
         dims=['phony_dim_0'],
