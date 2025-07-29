@@ -117,16 +117,19 @@ def grid_1d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
 
 
 def grid_2d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
-    """Regrid the input 2D variable into a 3D Grid using the grid_info.
+    """Regrid a 2D variable into a 3D grid using the provided grid information.
 
-    Peel variable into N-1D variables, grid it and recombine the results.
-
+    Takes a 2D variable with shape (trajectory_data, layers) and regrids each
+    layer, then combines the results into a 3D DataArray.
     """
+    # Ensure variable's shape is (trajectory_data, layers)
     if var.shape[0] < var.shape[1]:
         var = var.T
 
     num_layers = var.shape[1]
-    grid_layers = [grid_1d_variable(var[:, i], grid_info) for i in range(num_layers)]
+    grid_layers = [
+        grid_1d_variable(var[:, layer], grid_info) for layer in range(num_layers)
+    ]
     combined = concat(grid_layers, 'layers')
     return DataArray(
         combined.transpose('y-dim', 'x-dim', 'layers'),
