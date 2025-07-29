@@ -380,6 +380,22 @@ def test_grid_variable_2d_transposed(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_3d, result)
 
 
+def test_grid_variable_wrong_shape(sample_grid_info):
+    """Test grid_variable function."""
+    var = DataArray(
+        data=np.full((5, 5, 3), np.float32(3.14159)),
+        dims=['phony_dim_1', 'phony_dim_2', 'phony_dim_3'],
+        attrs={
+            'long_name': 'This is a 3D variable that cannot be regridded.',
+        },
+    )
+    with pytest.raises(
+        InvalidVariableShape,
+        match='SMAP L2 Gridder cannot handle variables with more than 2 dimensions.',
+    ):
+        grid_variable(var, sample_grid_info)
+
+
 def test_variable_fill_value(mocker):
     """Test variable_fill_value function."""
     # Test with _FillValue in encoding
