@@ -8,6 +8,7 @@ format.
 
 from collections.abc import Iterable
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 from pyproj import CRS
@@ -67,6 +68,8 @@ def process_input(in_data: DataTree, output_file: Path):
 
 def prepare_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     """Grid and annotate intput variable."""
+    # We know we are only dealing with DataArrays at this point.
+    var = cast(DataArray, var)
     grid_data = grid_variable(var, grid_info)
     grid_data.attrs = {**var.attrs, 'grid_mapping': 'crs'}
     encoding = {
@@ -83,7 +86,7 @@ def is_compressible(dtype: np.dtype) -> bool:
     return not (np.issubdtype(dtype, np.str_) or np.issubdtype(dtype, np.object_))
 
 
-def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+def grid_variable(var: DataArray, grid_info: dict) -> DataArray:
     """Regrid the input variable into a grid using the grid_info."""
     if is_1d_var(var):
         return grid_1d_variable(var, grid_info)
@@ -96,7 +99,7 @@ def grid_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     )
 
 
-def grid_1d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+def grid_1d_variable(var: DataArray, grid_info: dict) -> DataArray:
     """Regrid the input 1D variable into a 2D grid using the grid_info."""
     fill_val = variable_fill_value(var)
     grid = np.full(
@@ -116,7 +119,7 @@ def grid_1d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
     return DataArray(grid, dims=['y-dim', 'x-dim'])
 
 
-def grid_2d_variable(var: DataTree | DataArray, grid_info: dict) -> DataArray:
+def grid_2d_variable(var: DataArray, grid_info: dict) -> DataArray:
     """Regrid a 2D variable into a 3D grid using the provided grid information.
 
     Takes a 2D variable with shape (trajectory_data, layers) and regrids each
