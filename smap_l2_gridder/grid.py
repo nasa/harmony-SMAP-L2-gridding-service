@@ -135,8 +135,8 @@ def grid_2d_variable(var: DataArray, grid_info: dict) -> DataArray:
     ]
     combined = concat(grid_layers, 'layers')
     return DataArray(
-        combined.transpose('y-dim', 'x-dim', 'layers'),
-        dims=['y-dim', 'x-dim', 'layers'],
+        combined,
+        dims=['layers', 'y-dim', 'x-dim'],
     )
 
 
