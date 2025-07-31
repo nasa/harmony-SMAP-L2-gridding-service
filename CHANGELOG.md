@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.0] - 2025-07-29
+
+### Changed
+
+- `SPL2SMP` multi dimensional trajectories, 'landcover_class' and 'landcover_class_fraction', are no longer flattened in the output. Instead, each layer of the trajectory is gridded and then combined into a 3D result that is included in the output.  This change is generic and any 2D trajectory data will be processed in the same manner.
+
+
 ## [v0.4.0] - 2025-06-16
 
 ### Added
@@ -66,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code and configuration to wrap gridding logic into a Harmony Service [#3](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/3 )
 - GitHub actions CI configuration [#4](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/4 )
 
+[v1.0.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.5.0
 [v0.4.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.4.0
 [v0.3.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.3.0
 [v0.2.1]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.2.1

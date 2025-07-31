@@ -76,20 +76,23 @@ def sample_SPL2SMP_E_file(tmp_path) -> str:
         # it's not acting like a bottle neck so I'm not sure what to do. But
         # for now I'll remove this and use mark to skip the test.
 
-        # dt[f'{group}/tb_time_utc'] = DataArray(
-        #     data=np.array(
-        #         [
-        #             '2024-11-06T03:59:27.313Z',
-        #             '2024-11-06T03:59:25.754Z',
-        #             '2024-11-06T03:59:24.374Z',
-        #             '2024-11-06T03:59:22.735Z',
-        #             '2024-11-06T03:59:21.191Z',
-        #         ],
-        #         dtype='<U24',
-        #     ),
-        #     dims=['phony_dim_0'],
-        #     attrs={'long_name': 'Arithmetic average of the acquisition time...'},
-        # )
+        # 2025-07-28 I don't know what changed, but this no longer
+        # bottlenecks. I'm leaving the note above for when it does.
+
+        dt[f'{group}/tb_time_utc'] = DataArray(
+            data=np.array(
+                [
+                    '2024-11-06T03:59:27.313Z',
+                    '2024-11-06T03:59:25.754Z',
+                    '2024-11-06T03:59:24.374Z',
+                    '2024-11-06T03:59:22.735Z',
+                    '2024-11-06T03:59:21.191Z',
+                ],
+                dtype='<U24',
+            ),
+            dims=['phony_dim_0'],
+            attrs={'long_name': 'Arithmetic average of the acquisition time...'},
+        )
 
     # Round trip this to a file so that the encoding values are what we see
     # when we read from a NetCDF file.
@@ -133,6 +136,43 @@ def sample_SPL2SMAP_file(tmp_path) -> str:
             'valid_min': 0,
             'valid_max': 65535,
             '_FillValue': np.uint16(65534),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data/landcover_class'] = DataArray(
+        data=np.array(
+            [
+                [15.0, 1.0, 99.0],
+                [14.0, 2.0, 98.0],
+                [13.0, 3.0, 97.0],
+                [12.0, 4.0, 96.0],
+                [11.0, 5.0, 95.0],
+            ],
+            dtype=np.float32,
+        ),
+        dims=['phony_dim_0', 'phony_dim_2'],
+        attrs={
+            'long_name': 'An enumerated type that specifies the most common landcover class in the grid cell based on the IGBP landcover map.',
+            'valid_min': 0.0,
+            'valid_max': 10000000.0,
+            '_FillValue': np.float32(-9999.0),
+        },
+    )
+
+    dt['Soil_Moisture_Retrieval_Data/landcover_class_transposed'] = DataArray(
+        data=np.array(
+            [
+                [15.0, 14.0, 13.0, 12.0, 11.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0],
+                [99.0, 98.0, 97.0, 96.0, 95.0],
+            ],
+            dtype=np.float32,
+        ),
+        dims=['phony_dim_2', 'phony_dim_0'],
+        attrs={
+            'long_name': 'An enumerated type that specifies the most common landcover class in the grid cell based on the IGBP landcover map.',
+            'valid_min': 0.0,
+            '_FillValue': np.float32(-9999.0),
         },
     )
 

@@ -12,7 +12,6 @@ from smap_l2_gridder import grid
 from smap_l2_gridder.exceptions import InvalidCollectionError, InvalidVariableShape
 from smap_l2_gridder.grid import (
     default_fill_value,
-    flatten_2d_data,
     get_collection_shortname,
     get_grid_information,
     get_target_grid_information,
@@ -252,35 +251,6 @@ def split_2d_variable_spy(mocker):
     return mocker.spy(grid, 'split_2d_variable')
 
 
-def test_flatten_2d_data(dt_2d, split_2d_variable_spy, mocker):
-    """Test single variable flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables', return_value={'test_var'}
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
-
-    split_2d_variable_spy.assert_called_once_with(dt_2d, 'test_var')
-
-
-def test_multiple_variables_flattened(dt_2d, split_2d_variable_spy, mocker):
-    """Test more than one variable can be flattened."""
-    mocker.patch(
-        'smap_l2_gridder.grid.get_flattened_variables',
-        return_value={'test_var', 'test_other_var'},
-    )
-    _ = flatten_2d_data(dt_2d, 'short_name')
-    split_2d_variable_spy.assert_has_calls(
-        [call(dt_2d, 'test_var'), call(dt_2d, 'test_other_var')], any_order=True
-    )
-
-
-def test_no_flattening(dt_2d, split_2d_variable_spy, mocker):
-    """Check files without flattening are not flattened."""
-    mocker.patch('smap_l2_gridder.grid.get_flattened_variables', return_value=set())
-    _ = flatten_2d_data(dt_2d, 'short_name')
-    split_2d_variable_spy.assert_not_called()
-
-
 def test_split_2d_variable():
     """Test variable data splits correctly."""
     data = np.random.randint(0, 101, size=(6, 3))
@@ -349,7 +319,6 @@ def test_grid_variable(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_column, result)
 
 
-@pytest.mark.skip('Slow fixture')
 def test_grid_variable_string(sample_datatree, sample_grid_info):
     """Test grid_variable function."""
     var = sample_datatree['Soil_Moisture_Retrieval_Data_Polar/tb_time_utc']
@@ -369,6 +338,62 @@ def test_grid_variable_string(sample_datatree, sample_grid_info):
     # iterate over every value and and compare them directly.
     for actual, expected in zip(np.nditer(result.data), np.nditer(expected_utc)):
         assert actual == expected, f'full comparison {result.data}\n{expected_utc}'
+
+
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+def test_grid_variable_2d(sample_datatree, sample_grid_info):
+    """Test grid_variable function."""
+    var = sample_datatree['Soil_Moisture_Retrieval_Data/landcover_class']
+    result = grid_variable(var, sample_grid_info)
+    print(result)
+    expected_3d = np.full((3, 5, 5), np.float32(-9999.0))
+
+    # The row/col is just the diagonal values but handle layers.
+    for idx in range(len(var[:, 0])):
+        expected_3d[0, idx, idx] = var.data[idx, 0]
+        expected_3d[1, idx, idx] = var.data[idx, 1]
+        expected_3d[2, idx, idx] = var.data[idx, 2]
+
+    assert isinstance(result, DataArray)
+    assert result.dims == ('layers', 'y-dim', 'x-dim')
+    assert result.shape == (3, 5, 5)
+    np.testing.assert_array_almost_equal(expected_3d, result)
+
+
+@pytest.mark.parametrize('sample_datatree', ['sample_SPL2SMAP_file'], indirect=True)
+def test_grid_variable_2d_transposed(sample_datatree, sample_grid_info):
+    """Test grid_variable function."""
+    var = sample_datatree['Soil_Moisture_Retrieval_Data/landcover_class_transposed']
+    result = grid_variable(var, sample_grid_info)
+    print(result)
+    expected_3d = np.full((3, 5, 5), np.float32(-9999.0))
+
+    # The row/col is just the diagonal values but handle layers
+    for idx in range(len(var[0, :])):
+        expected_3d[0, idx, idx] = var.data[0, idx]
+        expected_3d[1, idx, idx] = var.data[1, idx]
+        expected_3d[2, idx, idx] = var.data[2, idx]
+
+    assert isinstance(result, DataArray)
+    assert result.dims == ('layers', 'y-dim', 'x-dim')
+    assert result.shape == (3, 5, 5)
+    np.testing.assert_array_almost_equal(expected_3d, result)
+
+
+def test_grid_variable_wrong_shape(sample_grid_info):
+    """Test grid_variable function."""
+    var = DataArray(
+        data=np.full((5, 5, 3), np.float32(3.14159)),
+        dims=['phony_dim_1', 'phony_dim_2', 'phony_dim_3'],
+        attrs={
+            'long_name': 'This is a 3D variable that cannot be regridded.',
+        },
+    )
+    with pytest.raises(
+        InvalidVariableShape,
+        match='SMAP L2 Gridder cannot handle variables with more than 2 dimensions.',
+    ):
+        grid_variable(var, sample_grid_info)
 
 
 def test_variable_fill_value(mocker):
