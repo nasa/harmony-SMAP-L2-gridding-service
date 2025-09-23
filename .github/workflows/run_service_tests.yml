@@ -18,9 +18,7 @@ jobs:
 
     steps:
       - name: Checkout Harmony-SMAP-L2-gridding-service repository
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+        uses: actions/checkout@v5
 
       - name: Build service image
         run: ./bin/build-image

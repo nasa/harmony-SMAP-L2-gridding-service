@@ -42,9 +42,9 @@ jobs:
 
     steps:
       - name: Checkout Harmony-SMAP-L2-gridding-service repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          lfs: true
+          fetch-depth: 0
 
       - name: Extract semantic version number
         run: echo "semantic_version=$(cat docker/service_version.txt)" >> $GITHUB_ENV
