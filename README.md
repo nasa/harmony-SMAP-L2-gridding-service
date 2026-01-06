@@ -38,11 +38,7 @@ python -m smap_l2_gridder --input path/to/granule.h5 --output path/to/output_gra
 └── 📁 tests
 ```
 
-* `.snyk` - A file used by the Snyk webhook to ensure the correct version of
-  Python is used when installing the full dependency tree for the Swath
-  Projector. This file is duplicated in each directory that contains a
-  requirements file. (`./docs`, `./tests`) **This file, and all copies, must be
-  updated when the version of Python is updated in the service Docker image.**
+* `.snyk` - A file used by the Snyk webhook to ensure the correct version of Python is used when installing the full dependency tree for the project. This file is duplicated in each directory that contains a requirements file. (`./docs`, `./tests`) **This file, and all copies, must be updated when the version of Python is updated in the service Docker image.**
 * `CHANGELOG.md` -   Contains a record of changes applied to each new release of the Harmony-SMAP-L2-Gridding-Service.
 * `CONTRIBUTING.md` -  Instructions on how to contribute to the repository.
 * `LICENSE` - Required for distribution under NASA open-source approval. Details conditions for use, reproduction and distribution.
