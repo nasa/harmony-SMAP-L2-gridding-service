@@ -5,12 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [vX.Y.Z] - Unreleased
+## [v1.0.1] - 2026-01-06
 
 ### Changed
 
 - Release notes for the SMAP L2 Gridding service will now include the commit
   history for that release.
+
+- Updates service to run on python 3.13 and updates internal python libs to avoid urllib3 vulnerabilites.
 
 ## [v1.0.0] - 2025-07-29
 

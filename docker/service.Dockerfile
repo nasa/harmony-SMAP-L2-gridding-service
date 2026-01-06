@@ -10,7 +10,7 @@
 # Copies the service code into the Docker image.
 #
 ###############################################################################
-FROM python:3.12-slim-bookworm
+FROM python:3.13-slim-bookworm
 
 WORKDIR "/home"
 
