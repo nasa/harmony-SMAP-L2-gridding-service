@@ -21,7 +21,7 @@ def main():
     try:
         args = parse_args()
         with open_datatree(args.input, decode_times=False) as in_data:
-            process_input(in_data, Path(args.output))
+            process_input(in_data, Path(args.output), str(args.input))
     except Exception as e:
         print(f'Error occurred: {e}')
         raise e

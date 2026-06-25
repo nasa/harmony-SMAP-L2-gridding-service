@@ -1,5 +1,6 @@
 """Tests for grid module."""
 
+import json
 from pathlib import Path
 from unittest.mock import call
 
@@ -24,6 +25,7 @@ from smap_l2_gridder.grid import (
     transfer_metadata,
     variable_fill_value,
 )
+from smap_l2_gridder.provenance import PROGRAM, get_semantic_version
 
 
 @pytest.fixture
@@ -64,6 +66,25 @@ def test_process_input(sample_datatree, tmp_path):
         out_dt['Soil_Moisture_Retrieval_Data/crs'].attrs['projected_crs_name']
         == 'WGS 84 / NSIDC EASE-Grid 2.0 Global'
     )
+
+
+def test_process_input_writes_provenance(sample_datatree, tmp_path):
+    """process_input writes history and history_json provenance to the output.
+
+    Verifies the TRT-42 provenance metadata (DAS-2323) is present on the root of
+    the gridded output file.
+    """
+    out_file = tmp_path / 'output.nc'
+    process_input(sample_datatree, out_file, 'input.h5')
+
+    out_dt = xr.open_datatree(out_file)
+    assert PROGRAM in out_dt.attrs['history']
+
+    history_json = json.loads(out_dt.attrs['history_json'])
+    assert len(history_json) == 1
+    assert history_json[0]['program'] == PROGRAM
+    assert history_json[0]['version'] == get_semantic_version()
+    assert history_json[0]['derived_from'] == 'input.h5'
 
 
 def test_transfer_metadata(sample_datatree):

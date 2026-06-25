@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0] - 2026-06-25
+
+### Added
+
+- The gridded output now includes `history` and `history_json` global
+  attributes describing the version of the service and the time of the gridding
+  operation, to adhere to
+  [TRT-42](https://bugs.earthdata.nasa.gov/browse/TRT-42). Any provenance
+  already present on the input granule is preserved and the new gridding record
+  is appended. ([DAS-2323](https://bugs.earthdata.nasa.gov/browse/DAS-2323))
+
 ## [v1.0.1] - 2026-01-06
 
 ### Changed
@@ -82,7 +93,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code and configuration to wrap gridding logic into a Harmony Service [#3](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/3 )
 - GitHub actions CI configuration [#4](https://github.com/nasa/harmony-SMAP-L2-gridding-service/pull/4 )
 
-[v1.0.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.5.0
+[v1.1.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/1.1.0
+[v1.0.1]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/1.0.1
+[v1.0.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/1.0.0
 [v0.4.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.4.0
 [v0.3.0]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.3.0
 [v0.2.1]: https://github.com/nasa/harmony-SMAP-L2-gridding-service/releases/tag/0.2.1
