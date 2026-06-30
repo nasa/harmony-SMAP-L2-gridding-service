@@ -75,7 +75,7 @@ def test_process_input_writes_provenance(sample_datatree, tmp_path):
     the gridded output file.
     """
     out_file = tmp_path / 'output.nc'
-    process_input(sample_datatree, out_file, 'input.h5')
+    process_input(sample_datatree, out_file, Path('input.h5'))
 
     out_dt = xr.open_datatree(out_file)
     assert PROGRAM in out_dt.attrs['history']
