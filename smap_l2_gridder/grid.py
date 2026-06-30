@@ -21,6 +21,7 @@ from .collections import (
 )
 from .crs import compute_dims, create_crs, parse_gpd_file
 from .exceptions import InvalidVariableShape
+from .provenance import update_history_metadata
 
 
 def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
@@ -29,16 +30,19 @@ def transform_l2g_input(input_filename: Path, output_filename: Path) -> None:
     Opens input and processes the data to a new output file.
     """
     with open_datatree(input_filename, decode_times=False) as in_data:
-        process_input(in_data, output_filename)
+        process_input(in_data, output_filename, input_filename)
 
 
-def process_input(in_data: DataTree, output_file: Path):
+def process_input(in_data: DataTree, output_file: Path, input_file: Path | None = None):
     """Process input file to generate gridded output file."""
     root_dt = DataTree()
 
     short_name = get_collection_shortname(in_data)
 
     root_dt = transfer_metadata(in_data, root_dt)
+    root_dt = update_history_metadata(
+        in_data, root_dt, str(input_file) if input_file else ''
+    )
     root_dt.to_netcdf(output_file, mode='w')
 
     # Process grids from all top level groups that are not only Metadata

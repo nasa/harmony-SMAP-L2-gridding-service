@@ -25,6 +25,7 @@ RUN pip install --no-input --no-cache-dir \
 # Copy service code.
 COPY ./harmony_service harmony_service
 COPY ./smap_l2_gridder smap_l2_gridder
+COPY ./docker/service_version.txt ./docker/service_version.txt
 
 # Configure a container to be executable via the `docker run` command.
 ENTRYPOINT ["python", "-m", "harmony_service"]
