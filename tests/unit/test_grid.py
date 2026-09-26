@@ -401,6 +401,133 @@ def test_grid_variable_2d_transposed(sample_datatree, sample_grid_info):
     np.testing.assert_array_almost_equal(expected_3d, result)
 
 
+@pytest.mark.parametrize('sample_count', [1, 2, 3, 5])
+@pytest.mark.parametrize('transposed', [False, True])
+def test_grid_layers_follow_trajectory_dimension(
+    sample_count: int, transposed: bool
+) -> None:
+    """Small and square subsets retain the same observation-to-layer mapping."""
+    rows = np.arange(sample_count)
+    cols = rows[::-1]
+    info = {
+        'src': {
+            'rows': DataArray(rows, dims=['observations']),
+            'cols': DataArray(cols, dims=['observations']),
+        },
+        'target': {'Grid Height': sample_count, 'Grid Width': sample_count},
+    }
+    values = np.arange(sample_count * 3, dtype='float32').reshape(sample_count, 3)
+    values[-1, -1] = np.nan
+    var = DataArray(values, dims=['observations', 'classes'])
+    if transposed:
+        var = var.T
+    original = var.copy(deep=True)
+
+    result = grid_variable(var, info)
+
+    expected = np.full((3, sample_count, sample_count), -9999.0, dtype='float32')
+    for record, (row, col) in enumerate(zip(rows, cols)):
+        for layer in range(3):
+            if not np.isnan(values[record, layer]):
+                expected[layer, row, col] = values[record, layer]
+    np.testing.assert_array_equal(result, expected)
+    assert result.dims == ('layers', 'y-dim', 'x-dim')
+    xr.testing.assert_identical(var, original)
+
+
+@pytest.mark.parametrize('sample_count', [1, 2, 5])
+@pytest.mark.parametrize('transposed', [False, True])
+def test_grid_layers_fall_back_to_matching_observation_count(
+    sample_count: int, transposed: bool
+) -> None:
+    """Unshared dimension names still support either positional orientation."""
+    indices = np.arange(sample_count)
+    info = {
+        'src': {'rows': DataArray(indices), 'cols': DataArray(indices)},
+        'target': {'Grid Height': sample_count, 'Grid Width': sample_count},
+    }
+    values = np.arange(sample_count * 3, dtype='int16').reshape(sample_count, 3)
+    var = DataArray(values, dims=['records', 'classes'])
+    if transposed:
+        var = var.T
+    result = grid_variable(var, info)
+    for record in indices:
+        np.testing.assert_array_equal(result[:, record, record], values[record])
+    assert result.shape == (3, sample_count, sample_count)
+    assert result.dtype == np.int16
+
+
+@pytest.mark.parametrize('sample_count', [1, 2, 5])
+def test_grid_layers_support_automatically_named_transposed_input(
+    sample_count: int,
+) -> None:
+    """Default dim_0 names need not refer to the same axis in separate arrays."""
+    indices = np.arange(sample_count)
+    info = {
+        'src': {'rows': DataArray(indices), 'cols': DataArray(indices)},
+        'target': {'Grid Height': sample_count, 'Grid Width': sample_count},
+    }
+    values = np.arange(sample_count * 3, dtype='float32').reshape(sample_count, 3)
+    result = grid_variable(DataArray(values.T), info)
+    assert result.shape == (3, sample_count, sample_count)
+    for record in indices:
+        np.testing.assert_array_equal(result[:, record, record], values[record])
+
+
+@pytest.mark.parametrize('shared_name', [False, True])
+def test_grid_layers_reject_mismatched_trajectory_size(shared_name: bool) -> None:
+    """Invalid observations fail before boolean indexing of the row array."""
+    info = {
+        'src': {
+            'rows': DataArray([0, 1, 2, 3], dims=['observations']),
+            'cols': DataArray([0, 1, 2, 3], dims=['observations']),
+        },
+        'target': {'Grid Height': 4, 'Grid Width': 4},
+    }
+    dims = ['observations' if shared_name else 'records', 'classes']
+    var = DataArray(np.ones((2, 3), dtype='float32'), dims=dims)
+    with pytest.raises(InvalidVariableShape, match='trajectory'):
+        grid_variable(var, info)
+
+
+@pytest.mark.parametrize('transposed', [False, True])
+def test_prepare_small_layered_variable_round_trip(
+    tmp_path: Path, transposed: bool
+) -> None:
+    """Prepared layered values and metadata survive a real NetCDF round trip."""
+    info = {
+        'src': {
+            'rows': DataArray([0, 1], dims=['observations']),
+            'cols': DataArray([1, 0], dims=['observations']),
+        },
+        'target': {'Grid Height': 2, 'Grid Width': 2},
+    }
+    values = np.array([[1, 2, 3], [4, 5, np.nan]], dtype='float32')
+    var = DataArray(
+        values,
+        dims=['observations', 'classes'],
+        attrs={'long_name': 'Layered observations', 'units': '1'},
+    )
+    var.encoding['_FillValue'] = np.float32(-9999)
+    var.encoding['dtype'] = np.dtype('float32')
+    if transposed:
+        var = var.T
+    result = prepare_variable(var, info)
+    output = tmp_path / 'layers.nc'
+    result.to_dataset(name='science').to_netcdf(output)
+    with xr.open_dataset(output, mask_and_scale=False) as restored:
+        np.testing.assert_array_equal(restored.science[:, 0, 1], [1, 2, 3])
+        np.testing.assert_array_equal(restored.science[:, 1, 0], [4, 5, -9999])
+        np.testing.assert_array_equal(restored.science[:, 0, 0], [-9999] * 3)
+        assert restored.science.dims == ('layers', 'y-dim', 'x-dim')
+        assert restored.science.attrs['long_name'] == 'Layered observations'
+        assert restored.science.attrs['units'] == '1'
+        assert restored.science.attrs['grid_mapping'] == 'crs'
+        assert restored.science.attrs['_FillValue'] == -9999
+        assert restored.science.encoding['zlib'] is True
+        assert restored.science.encoding['complevel'] == 6
+
+
 def test_grid_variable_wrong_shape(sample_grid_info):
     """Test grid_variable function."""
     var = DataArray(

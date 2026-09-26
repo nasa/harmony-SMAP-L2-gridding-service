@@ -129,9 +129,20 @@ def grid_2d_variable(var: DataArray, grid_info: dict) -> DataArray:
     Takes a 2D variable with shape (trajectory_data, layers) and regrids each
     layer, then combines the results into a 3D DataArray.
     """
-    # Ensure variable's shape is (trajectory_data, layers)
-    if var.shape[0] < var.shape[1]:
+    # The trajectory may be shorter than the layer axis after subsetting.
+    # Prefer its named dimension, including when both axes have equal length.
+    rows = grid_info['src']['rows']
+    trajectory_dim = rows.dims[0]
+    if trajectory_dim in var.dims and var.sizes[trajectory_dim] == rows.size:
+        var = var.transpose(trajectory_dim, ...)
+    elif var.shape[0] != rows.size and var.shape[1] == rows.size:
+        # Preserve positional input support when dimension names are unshared.
         var = var.T
+
+    if var.shape[0] != rows.size:
+        raise InvalidVariableShape(
+            'Variable trajectory dimension must match the row-index length.'
+        )
 
     num_layers = var.shape[1]
     grid_layers = [
